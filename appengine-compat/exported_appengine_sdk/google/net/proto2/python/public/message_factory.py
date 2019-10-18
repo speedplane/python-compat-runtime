@@ -27,9 +27,18 @@ my_proto_instance = message_classes['some.proto.package.MessageName']()
 
 
 
+from google.net.proto2.python.internal import api_implementation
 from google.net.proto2.python.public import descriptor_pool
 from google.net.proto2.python.public import message
-from google.net.proto2.python.public import reflection
+
+if api_implementation.Type() == 'cpp':
+  from google.net.proto2.python.internal.cpp import cpp_message as message_impl
+else:
+  from google.net.proto2.python.internal import python_message as message_impl
+
+
+
+_GENERATED_PROTOCOL_MESSAGE_TYPE = message_impl.GeneratedProtocolMessageType
 
 
 class MessageFactory(object):
@@ -54,25 +63,25 @@ class MessageFactory(object):
     Returns:
       A class describing the passed in descriptor.
     """
-    if descriptor.full_name not in self._classes:
+    if descriptor not in self._classes:
       descriptor_name = descriptor.name
       if str is bytes:
         descriptor_name = descriptor.name.encode('ascii', 'ignore')
-      result_class = reflection.GeneratedProtocolMessageType(
+      result_class = _GENERATED_PROTOCOL_MESSAGE_TYPE(
           descriptor_name,
           (message.Message,),
           {'DESCRIPTOR': descriptor, '__module__': None})
 
-      self._classes[descriptor.full_name] = result_class
+      self._classes[descriptor] = result_class
       for field in descriptor.fields:
         if field.message_type:
           self.GetPrototype(field.message_type)
       for extension in result_class.DESCRIPTOR.extensions:
-        if extension.containing_type.full_name not in self._classes:
+        if extension.containing_type not in self._classes:
           self.GetPrototype(extension.containing_type)
-        extended_class = self._classes[extension.containing_type.full_name]
+        extended_class = self._classes[extension.containing_type]
         extended_class.RegisterExtension(extension)
-    return self._classes[descriptor.full_name]
+    return self._classes[descriptor]
 
   def GetMessages(self, files):
     """Gets all the messages from a specified file.
@@ -104,9 +113,9 @@ class MessageFactory(object):
 
 
       for extension in file_desc.extensions_by_name.values():
-        if extension.containing_type.full_name not in self._classes:
+        if extension.containing_type not in self._classes:
           self.GetPrototype(extension.containing_type)
-        extended_class = self._classes[extension.containing_type.full_name]
+        extended_class = self._classes[extension.containing_type]
         extended_class.RegisterExtension(extension)
     return result
 
@@ -118,13 +127,22 @@ def GetMessages(file_protos):
   """Builds a dictionary of all the messages available in a set of files.
 
   Args:
-    file_protos: A sequence of file protos to build messages out of.
+    file_protos: Iterable of FileDescriptorProto to build messages out of.
 
   Returns:
     A dictionary mapping proto names to the message classes. This will include
     any dependent messages as well as any messages defined in the same file as
     a specified message.
   """
-  for file_proto in file_protos:
+
+
+  file_by_name = {file_proto.name: file_proto for file_proto in file_protos}
+  def _AddFile(file_proto):
+    for dependency in file_proto.dependency:
+      if dependency in file_by_name:
+
+        _AddFile(file_by_name.pop(dependency))
     _FACTORY.pool.Add(file_proto)
+  while file_by_name:
+    _AddFile(file_by_name.popitem()[1])
   return _FACTORY.GetMessages([file_proto.name for file_proto in file_protos])

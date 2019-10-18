@@ -52,6 +52,7 @@ import tempfile
 import time
 import urllib
 import urllib2
+import urlparse
 
 import google
 
@@ -78,8 +79,8 @@ from google.appengine.tools import appengine_rpc
 from google.appengine.tools import augment_mimetypes
 from google.appengine.tools import bulkloader
 from google.appengine.tools import context_util
-from google.appengine.tools import goroots
 from google.appengine.tools import sdk_update_checker
+from google.appengine.tools.devappserver2.go import goroots
 
 
 try:
@@ -154,6 +155,10 @@ DEFAULT_RESOURCE_LIMITS = {
     'max_file_count': 10000,
 }
 
+
+
+DEV_SERVER_HOSTNAMES = ('localhost', '127.0.0.1', '::1')
+
 # Client ID and secrets are managed in the Google API console.
 
 
@@ -178,7 +183,15 @@ SERVICE_ACCOUNT_BASE = (
 
 APP_YAML_FILENAME = 'app.yaml'
 
-GCLOUD_ONLY_RUNTIMES = set(['custom', 'nodejs'])
+GCLOUD_ONLY_RUNTIMES = set([
+    'custom',
+    'go111',
+    'go112',
+    'nodejs',
+    'nodejs8',
+    'php72',
+    'python37',
+])
 
 
 
@@ -244,6 +257,10 @@ def _PrintErrorAndExit(stream, msg, exit_code=2):
   """
   stream.write(msg)
   sys.exit(exit_code)
+
+
+def _IsDevAppserver(server):
+  return urlparse.urlparse('//' + server).hostname in DEV_SERVER_HOSTNAMES
 
 
 def JavaSupported():
@@ -2129,9 +2146,8 @@ class AppVersionUpload(object):
     success, unused_contents = RetryWithBackoff(
         lambda: (self.IsReady(), None), PrintRetryMessage, 1, 2, 60, 20)
     if not success:
-
       logging.warning('Version still not ready to serve, aborting.')
-      raise RuntimeError('Version not ready.')
+      raise RuntimeError('Version is not ready to serve.')
 
     result = self.StartServing()
     if not result:
@@ -2144,9 +2160,8 @@ class AppVersionUpload(object):
             'Another operation on this version is in progress.')
       success, response = RetryNoBackoff(self.IsServing, PrintRetryMessage)
       if not success:
-
         logging.warning('Version still not serving, aborting.')
-        raise RuntimeError('Version not ready.')
+        raise RuntimeError('Version failed to start serving.')
 
 
 
@@ -2773,6 +2788,7 @@ class AppCfgApp(object):
     argv: The original command line as a list.
     args: The positional command line args left over after parsing the options.
     error_fh: Unexpected HTTPErrors are printed to this file handle.
+    stage_dir: Stagind directory used for deployment.
 
   Attributes for testing:
     parser_class: The class to use for parsing the command line.  Because
@@ -3202,9 +3218,7 @@ class AppCfgApp(object):
 
     source = GetSourceName()
 
-    dev_appserver = self.options.host in ['localhost', '127.0.0.1']
-
-    if dev_appserver:
+    if _IsDevAppserver(self.options.server):
       if not self.rpc_server_class:
         self.rpc_server_class = appengine_rpc.HttpRpcServer
         if hasattr(self, 'runtime'):
@@ -3362,10 +3376,6 @@ class AppCfgApp(object):
       best_context = context_util.BestSourceContext(source_contexts)
       context_file_map[context_util.CONTEXT_FILENAME] = json.dumps(
           best_context)
-    if not os.path.exists(
-        os.path.join(basepath, context_util.EXT_CONTEXT_FILENAME)):
-      context_file_map[context_util.EXT_CONTEXT_FILENAME] = json.dumps(
-          source_contexts)
     base_openfunc = openfunc
     def OpenWithContext(name):
       if name in context_file_map:
@@ -3429,11 +3439,6 @@ class AppCfgApp(object):
                           '%s.yaml' %
                           (os.path.abspath(basepath), basename))
 
-
-
-    appyaml.module = appyaml.module or appyaml.service
-    appyaml.service = None
-
     orig_application = appyaml.application
     orig_module = appyaml.module
     orig_version = appyaml.version
@@ -3466,7 +3471,7 @@ class AppCfgApp(object):
     msg = 'Application: %s' % appyaml.application
     if appyaml.application != orig_application:
       msg += ' (was: %s)' % orig_application
-    if self.action.function is 'Update':
+    if self.action.function == 'Update':
 
       if (appyaml.module is not None and
           appyaml.module != appinfo.DEFAULT_MODULE):
@@ -3874,10 +3879,7 @@ class AppCfgApp(object):
 
 
 
-
-
-      sdk_root = os.path.dirname(appcfg_java.__file__)
-      self.stage_dir = java_app_update.CreateStagingDirectory(sdk_root)
+      self.stage_dir = java_app_update.CreateStagingDirectory()
       try:
         appyaml = self._ParseAppInfoFromYaml(
             self.stage_dir,
@@ -4208,8 +4210,7 @@ class AppCfgApp(object):
     if JavaSupported() and appcfg_java.IsWarFileWithoutYaml(self.basepath):
       java_app_update = appcfg_java.JavaAppUpdate(self.basepath, self.options)
       self.options.compile_jsps = True
-      sdk_root = os.path.dirname(appcfg_java.__file__)
-      basepath = java_app_update.CreateStagingDirectory(sdk_root)
+      basepath = java_app_update.CreateStagingDirectory()
     else:
       basepath = self.basepath
 
@@ -4848,6 +4849,14 @@ class AppCfgApp(object):
       logging.error('upload_data action requires SQLite3 and the python '
                     'sqlite3 module (included in python since 2.5).')
       sys.exit(1)
+
+    if _IsDevAppserver(self.options.server):
+
+
+
+
+
+      arg_dict['throttle_class'] = lambda *args, **kwargs: self._GetRpcServer()
 
     sys.exit(bulkloader.Run(arg_dict, self._GetOAuth2Parameters()))
 

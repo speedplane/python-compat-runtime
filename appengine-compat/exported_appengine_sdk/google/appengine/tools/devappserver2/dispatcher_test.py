@@ -27,10 +27,10 @@ import mox
 from google.appengine.api import appinfo
 from google.appengine.api import dispatchinfo
 from google.appengine.api import request_info
-from google.appengine.tools.devappserver2 import api_server
 from google.appengine.tools.devappserver2 import dispatcher
 from google.appengine.tools.devappserver2 import module
 from google.appengine.tools.devappserver2 import scheduled_executor
+from google.appengine.tools.devappserver2 import stub_util
 
 # This file uses pep8 naming.
 # pylint: disable=invalid-name
@@ -60,11 +60,11 @@ class ModuleConfigurationStub(object):
     self.normalized_libraries = []
     self.env_variables = []
     if manual_scaling:
-      self.automatic_scaling = appinfo.AutomaticScaling()
-      self.manual_scaling = None
+      self.automatic_scaling_config = appinfo.AutomaticScaling()
+      self.manual_scaling_config = None
     else:
-      self.automatic_scaling = None
-      self.manual_scaling = appinfo.ManualScaling(instances=1)
+      self.automatic_scaling_config = None
+      self.manual_scaling_config = appinfo.ManualScaling(instances=1)
     self.inbound_services = None
 
   def add_change_callback(self, fn):
@@ -107,7 +107,6 @@ class AutoScalingModuleFacade(module.AutoScalingModule):
         api_port=8080,
         auth_domain='gmail.com',
         runtime_stderr_loglevel=1,
-        node_config=None,
         php_config=None,
         python_config=None,
         java_config=None,
@@ -155,7 +154,6 @@ class ManualScalingModuleFacade(module.ManualScalingModule):
         api_port=8080,
         auth_domain='gmail.com',
         runtime_stderr_loglevel=1,
-        node_config=None,
         php_config=None,
         python_config=None,
         java_config=None,
@@ -202,7 +200,6 @@ def _make_dispatcher(app_config):
       1,
       'gmail.com',
       1,
-      node_config=None,
       php_config=None,
       python_config=None,
       java_config=None,
@@ -232,7 +229,7 @@ class DispatcherTest(unittest.TestCase):
 
   def setUp(self):
     self.mox = mox.Mox()
-    api_server.test_setup_stubs()
+    stub_util.setup_test_stubs()
     self.dispatch_config = DispatchConfigurationStub()
     app_config = ApplicationConfigurationStub(MODULE_CONFIGURATIONS)
     self.dispatcher = _make_dispatcher(app_config)
@@ -247,12 +244,18 @@ class DispatcherTest(unittest.TestCase):
                                              host='0.0.0.0')
 
     self.mox.StubOutWithMock(self.dispatcher, '_create_module')
-    self.dispatcher._create_module(app_config.modules[0], 1).AndReturn(
-        (self.module1, 2))
-    self.dispatcher._create_module(app_config.modules[1], 2).AndReturn(
-        (self.module2, 3))
-    self.dispatcher._create_module(app_config.modules[2], 3).AndReturn(
-        (self.module3, 4))
+    self.mox.StubOutWithMock(self.dispatcher._port_registry, 'has')
+    self.dispatcher._port_registry.has(1).AndReturn(False)
+    self.dispatcher._create_module(app_config.modules[0], 1, None).AndReturn(
+        self.module1)
+    self.dispatcher._port_registry.has(1).AndReturn(True)
+    self.dispatcher._port_registry.has(2).AndReturn(False)
+    self.dispatcher._create_module(app_config.modules[1], 2, None).AndReturn(
+        self.module2)
+    self.dispatcher._port_registry.has(2).AndReturn(True)
+    self.dispatcher._port_registry.has(3).AndReturn(False)
+    self.dispatcher._create_module(app_config.modules[2], 3, None).AndReturn(
+        self.module3)
     self.mox.ReplayAll()
     self.dispatcher.start('localhost', 12345, object())
     app_config.dispatch = self.dispatch_config

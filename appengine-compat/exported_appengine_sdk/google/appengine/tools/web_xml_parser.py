@@ -26,7 +26,6 @@ SecurityConstraint: Contains information about specified security constraints.
 """
 
 import logging
-
 from xml.etree import ElementTree
 
 from google.appengine.tools import xml_parser_utils
@@ -95,7 +94,7 @@ class WebXmlParser(object):
     camel_case_name = ''.join(part.title() for part in element_name.split('-'))
     method_name = 'Process%sNode' % camel_case_name
     if (hasattr(self, method_name) and
-        method_name is not 'ProcessSecondLevelNode'):
+        method_name != 'ProcessSecondLevelNode'):
       getattr(self, method_name)(node)
     else:
       logging.warning('Second-level tag not recognized: %s', element_name)

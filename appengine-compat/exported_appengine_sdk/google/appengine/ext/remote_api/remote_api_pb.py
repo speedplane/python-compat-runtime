@@ -18,8 +18,14 @@
 
 
 from google.net.proto import ProtocolBuffer
+import abc
 import array
-import dummy_thread as thread
+try:
+  from thread import allocate_lock as _Lock
+except ImportError:
+  from threading import Lock as _Lock
+
+if hasattr(__builtins__, 'xrange'): range = xrange
 
 if hasattr(ProtocolBuffer, 'ExtendableProtocolMessage'):
   _extension_runtime = True
@@ -43,6 +49,8 @@ class Request(ProtocolBuffer.ProtocolMessage):
   request_ = ""
   has_request_id_ = 0
   request_id_ = ""
+  has_trace_context_ = 0
+  trace_context_ = ""
 
   def __init__(self, contents=None):
     if contents is not None: self.MergeFromString(contents)
@@ -99,6 +107,19 @@ class Request(ProtocolBuffer.ProtocolMessage):
 
   def has_request_id(self): return self.has_request_id_
 
+  def trace_context(self): return self.trace_context_
+
+  def set_trace_context(self, x):
+    self.has_trace_context_ = 1
+    self.trace_context_ = x
+
+  def clear_trace_context(self):
+    if self.has_trace_context_:
+      self.has_trace_context_ = 0
+      self.trace_context_ = ""
+
+  def has_trace_context(self): return self.has_trace_context_
+
 
   def MergeFrom(self, x):
     assert x is not self
@@ -106,6 +127,7 @@ class Request(ProtocolBuffer.ProtocolMessage):
     if (x.has_method()): self.set_method(x.method())
     if (x.has_request()): self.set_request(x.request())
     if (x.has_request_id()): self.set_request_id(x.request_id())
+    if (x.has_trace_context()): self.set_trace_context(x.trace_context())
 
   def Equals(self, x):
     if x is self: return 1
@@ -117,6 +139,8 @@ class Request(ProtocolBuffer.ProtocolMessage):
     if self.has_request_ and self.request_ != x.request_: return 0
     if self.has_request_id_ != x.has_request_id_: return 0
     if self.has_request_id_ and self.request_id_ != x.request_id_: return 0
+    if self.has_trace_context_ != x.has_trace_context_: return 0
+    if self.has_trace_context_ and self.trace_context_ != x.trace_context_: return 0
     return 1
 
   def IsInitialized(self, debug_strs=None):
@@ -141,6 +165,7 @@ class Request(ProtocolBuffer.ProtocolMessage):
     n += self.lengthString(len(self.method_))
     n += self.lengthString(len(self.request_))
     if (self.has_request_id_): n += 1 + self.lengthString(len(self.request_id_))
+    if (self.has_trace_context_): n += 1 + self.lengthString(len(self.trace_context_))
     return n + 3
 
   def ByteSizePartial(self):
@@ -155,6 +180,7 @@ class Request(ProtocolBuffer.ProtocolMessage):
       n += 1
       n += self.lengthString(len(self.request_))
     if (self.has_request_id_): n += 1 + self.lengthString(len(self.request_id_))
+    if (self.has_trace_context_): n += 1 + self.lengthString(len(self.trace_context_))
     return n
 
   def Clear(self):
@@ -162,6 +188,7 @@ class Request(ProtocolBuffer.ProtocolMessage):
     self.clear_method()
     self.clear_request()
     self.clear_request_id()
+    self.clear_trace_context()
 
   def OutputUnchecked(self, out):
     out.putVarInt32(18)
@@ -173,6 +200,9 @@ class Request(ProtocolBuffer.ProtocolMessage):
     if (self.has_request_id_):
       out.putVarInt32(42)
       out.putPrefixedString(self.request_id_)
+    if (self.has_trace_context_):
+      out.putVarInt32(50)
+      out.putPrefixedString(self.trace_context_)
 
   def OutputPartial(self, out):
     if (self.has_service_name_):
@@ -187,6 +217,9 @@ class Request(ProtocolBuffer.ProtocolMessage):
     if (self.has_request_id_):
       out.putVarInt32(42)
       out.putPrefixedString(self.request_id_)
+    if (self.has_trace_context_):
+      out.putVarInt32(50)
+      out.putPrefixedString(self.trace_context_)
 
   def TryMerge(self, d):
     while d.avail() > 0:
@@ -203,9 +236,12 @@ class Request(ProtocolBuffer.ProtocolMessage):
       if tt == 42:
         self.set_request_id(d.getPrefixedString())
         continue
+      if tt == 50:
+        self.set_trace_context(d.getPrefixedString())
+        continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -215,16 +251,18 @@ class Request(ProtocolBuffer.ProtocolMessage):
     if self.has_method_: res+=prefix+("method: %s\n" % self.DebugFormatString(self.method_))
     if self.has_request_: res+=prefix+("request: %s\n" % self.DebugFormatString(self.request_))
     if self.has_request_id_: res+=prefix+("request_id: %s\n" % self.DebugFormatString(self.request_id_))
+    if self.has_trace_context_: res+=prefix+("trace_context: %s\n" % self.DebugFormatString(self.trace_context_))
     return res
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kservice_name = 2
   kmethod = 3
   krequest = 4
   krequest_id = 5
+  ktrace_context = 6
 
   _TEXT = _BuildTagLookupTable({
     0: "ErrorCode",
@@ -232,7 +270,8 @@ class Request(ProtocolBuffer.ProtocolMessage):
     3: "method",
     4: "request",
     5: "request_id",
-  }, 5)
+    6: "trace_context",
+  }, 6)
 
   _TYPES = _BuildTagLookupTable({
     0: ProtocolBuffer.Encoder.NUMERIC,
@@ -240,7 +279,8 @@ class Request(ProtocolBuffer.ProtocolMessage):
     3: ProtocolBuffer.Encoder.STRING,
     4: ProtocolBuffer.Encoder.STRING,
     5: ProtocolBuffer.Encoder.STRING,
-  }, 5, ProtocolBuffer.Encoder.MAX_TYPE)
+    6: ProtocolBuffer.Encoder.STRING,
+  }, 6, ProtocolBuffer.Encoder.MAX_TYPE)
 
 
   _STYLE = """"""
@@ -352,7 +392,7 @@ class ApplicationError(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -364,7 +404,7 @@ class ApplicationError(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kcode = 1
   kdetail = 2
@@ -521,7 +561,7 @@ class RpcError(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -533,7 +573,7 @@ class RpcError(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kcode = 1
   kdetail = 2
@@ -567,7 +607,7 @@ class Response(ProtocolBuffer.ProtocolMessage):
   rpc_error_ = None
 
   def __init__(self, contents=None):
-    self.lazy_init_lock_ = thread.allocate_lock()
+    self.lazy_init_lock_ = _Lock()
     if contents is not None: self.MergeFromString(contents)
 
   def response(self): return self.response_
@@ -765,7 +805,7 @@ class Response(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -786,7 +826,7 @@ class Response(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kresponse = 1
   kexception = 2
@@ -822,7 +862,7 @@ class TransactionRequest_Precondition(ProtocolBuffer.ProtocolMessage):
   hash_ = ""
 
   def __init__(self, contents=None):
-    self.key_ = Reference()
+    self.key_ = google.appengine.datastore.entity_pb.Reference()
     if contents is not None: self.MergeFromString(contents)
 
   def key(self): return self.key_
@@ -919,7 +959,7 @@ class TransactionRequest_Precondition(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -942,7 +982,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
 
   def __init__(self, contents=None):
     self.precondition_ = []
-    self.lazy_init_lock_ = thread.allocate_lock()
+    self.lazy_init_lock_ = _Lock()
     if contents is not None: self.MergeFromString(contents)
 
   def precondition_size(self): return len(self.precondition_)
@@ -965,7 +1005,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
     if self.puts_ is None:
       self.lazy_init_lock_.acquire()
       try:
-        if self.puts_ is None: self.puts_ = PutRequest()
+        if self.puts_ is None: self.puts_ = google.appengine.datastore.datastore_v3_pb.PutRequest()
       finally:
         self.lazy_init_lock_.release()
     return self.puts_
@@ -984,7 +1024,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
     if self.deletes_ is None:
       self.lazy_init_lock_.acquire()
       try:
-        if self.deletes_ is None: self.deletes_ = DeleteRequest()
+        if self.deletes_ is None: self.deletes_ = google.appengine.datastore.datastore_v3_pb.DeleteRequest()
       finally:
         self.lazy_init_lock_.release()
     return self.deletes_
@@ -1015,7 +1055,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
 
   def MergeFrom(self, x):
     assert x is not self
-    for i in xrange(x.precondition_size()): self.add_precondition().CopyFrom(x.precondition(i))
+    for i in range(x.precondition_size()): self.add_precondition().CopyFrom(x.precondition(i))
     if (x.has_puts()): self.mutable_puts().MergeFrom(x.puts())
     if (x.has_deletes()): self.mutable_deletes().MergeFrom(x.deletes())
     if (x.has_allow_multiple_eg()): self.set_allow_multiple_eg(x.allow_multiple_eg())
@@ -1044,7 +1084,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
   def ByteSize(self):
     n = 0
     n += 2 * len(self.precondition_)
-    for i in xrange(len(self.precondition_)): n += self.precondition_[i].ByteSize()
+    for i in range(len(self.precondition_)): n += self.precondition_[i].ByteSize()
     if (self.has_puts_): n += 1 + self.lengthString(self.puts_.ByteSize())
     if (self.has_deletes_): n += 1 + self.lengthString(self.deletes_.ByteSize())
     if (self.has_allow_multiple_eg_): n += 2
@@ -1053,7 +1093,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
   def ByteSizePartial(self):
     n = 0
     n += 2 * len(self.precondition_)
-    for i in xrange(len(self.precondition_)): n += self.precondition_[i].ByteSizePartial()
+    for i in range(len(self.precondition_)): n += self.precondition_[i].ByteSizePartial()
     if (self.has_puts_): n += 1 + self.lengthString(self.puts_.ByteSizePartial())
     if (self.has_deletes_): n += 1 + self.lengthString(self.deletes_.ByteSizePartial())
     if (self.has_allow_multiple_eg_): n += 2
@@ -1066,7 +1106,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
     self.clear_allow_multiple_eg()
 
   def OutputUnchecked(self, out):
-    for i in xrange(len(self.precondition_)):
+    for i in range(len(self.precondition_)):
       out.putVarInt32(11)
       self.precondition_[i].OutputUnchecked(out)
       out.putVarInt32(12)
@@ -1083,7 +1123,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
       out.putBoolean(self.allow_multiple_eg_)
 
   def OutputPartial(self, out):
-    for i in xrange(len(self.precondition_)):
+    for i in range(len(self.precondition_)):
       out.putVarInt32(11)
       self.precondition_[i].OutputPartial(out)
       out.putVarInt32(12)
@@ -1122,7 +1162,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -1149,7 +1189,7 @@ class TransactionRequest(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kPreconditionGroup = 1
   kPreconditionkey = 2
@@ -1189,9 +1229,9 @@ class TransactionQueryResult(ProtocolBuffer.ProtocolMessage):
   entity_group_ = None
 
   def __init__(self, contents=None):
-    self.result_ = QueryResult()
-    self.entity_group_key_ = Reference()
-    self.lazy_init_lock_ = thread.allocate_lock()
+    self.result_ = google.appengine.datastore.datastore_v3_pb.QueryResult()
+    self.entity_group_key_ = google.appengine.datastore.entity_pb.Reference()
+    self.lazy_init_lock_ = _Lock()
     if contents is not None: self.MergeFromString(contents)
 
   def result(self): return self.result_
@@ -1214,7 +1254,7 @@ class TransactionQueryResult(ProtocolBuffer.ProtocolMessage):
     if self.entity_group_ is None:
       self.lazy_init_lock_.acquire()
       try:
-        if self.entity_group_ is None: self.entity_group_ = EntityProto()
+        if self.entity_group_ is None: self.entity_group_ = google.appengine.datastore.entity_pb.EntityProto()
       finally:
         self.lazy_init_lock_.release()
     return self.entity_group_
@@ -1333,7 +1373,7 @@ class TransactionQueryResult(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -1355,7 +1395,7 @@ class TransactionQueryResult(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kresult = 1
   kentity_group_key = 2
