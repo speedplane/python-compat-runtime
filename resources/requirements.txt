@@ -3,8 +3,8 @@
 certifi==2017.4.17
 chardet==3.0.4
 futures==3.0.3
-google-api-python-client==1.6.2
-google-python-cloud-debugger==1.18
+google-api-python-client==1.7.11
+google-python-cloud-debugger>=2.12
 gunicorn==19.4.1
 httplib2==0.10.3
 idna==2.5
