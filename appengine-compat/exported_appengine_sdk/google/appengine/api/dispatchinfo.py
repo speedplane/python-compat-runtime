@@ -21,6 +21,8 @@
 Library for parsing dispatch.yaml files and working with these in memory.
 """
 
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 
 
@@ -30,6 +32,7 @@ Library for parsing dispatch.yaml files and working with these in memory.
 
 import os
 import re
+from google.appengine._internal import six_subset
 
 
 if os.environ.get('APPENGINE_RUNTIME') == 'python27':
@@ -97,7 +100,7 @@ class DispatchEntryURLValidator(validation.Validator):
     """Validates an URL pattern."""
     if value is None:
       raise validation.MissingAttribute('url must be specified')
-    if not isinstance(value, basestring):
+    if not isinstance(value, six_subset.string_types):
       raise validation.ValidationError('url must be a string, not \'%r\'' %
                                        type(value))
 
@@ -122,10 +125,10 @@ class ParsedURL(object):
 
   Attributes:
     host_pattern: The host pattern component of the URL pattern.
-    host_exact: True iff the host pattern does not start with a *.
+    host_exact: True if the host pattern does not start with a *.
     host: host_pattern  with any leading * removed.
     path_pattern: The path pattern component of the URL pattern.
-    path_exact: True iff path_pattern does not end with a *.
+    path_exact: True if the path_pattern does not end with a *.
     path: path_pattern with any trailing * removed.
   """
 
@@ -179,8 +182,8 @@ class DispatchEntry(validation.Validated):
   """A Dispatch entry describes a mapping from a URL pattern to a module."""
   ATTRIBUTES = {
       URL: DispatchEntryURLValidator(),
-      MODULE: validation.Optional(appinfo.MODULE_ID_RE_STRING),
-      SERVICE: validation.Optional(appinfo.MODULE_ID_RE_STRING)
+      SERVICE: validation.Preferred(MODULE, appinfo.MODULE_ID_RE_STRING),
+      MODULE: validation.Deprecated(SERVICE, appinfo.MODULE_ID_RE_STRING),
   }
 
 
@@ -225,15 +228,5 @@ def LoadSingleDispatch(dispatch_info, open_fn=None):
 
 
   dispatch_info_external = parsed_yaml[0]
-  for dispatch in getattr(dispatch_info_external, DISPATCH) or []:
-    if dispatch.module and dispatch.service:
-      raise MalformedDispatchConfigurationError(
-          'Both module: and service: in dispatch entry. Please use only one.')
-    if not (dispatch.module or dispatch.service):
-      raise MalformedDispatchConfigurationError(
-          "Missing required value 'service'.")
-
-
-    dispatch.module = dispatch.module or dispatch.service
-    dispatch.service = None
+  dispatch_info_external.CheckInitialized()
   return dispatch_info_external

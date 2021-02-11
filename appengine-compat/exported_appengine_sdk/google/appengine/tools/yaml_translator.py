@@ -92,6 +92,7 @@ class AppYamlTranslator(object):
     self.VerifyRequiredEntriesPresent()
     stmnt_list = self.TranslateBasicEntries()
     stmnt_list += self.TranslateAutomaticScaling()
+    stmnt_list += self.TranslateVpcAccessConnector()
     stmnt_list += self.TranslateBasicScaling()
     stmnt_list += self.TranslateManualScaling()
     stmnt_list += self.TranslatePrecompilationEnabled()
@@ -152,6 +153,16 @@ class AppYamlTranslator(object):
       value = getattr(self.app_engine_web_xml.automatic_scaling, setting)
       if value:
         statements.append('  %s: %s' % (setting, value))
+    return statements
+
+  def TranslateVpcAccessConnector(self):
+    """Translates vpc access connector settings to yaml."""
+    if not self.app_engine_web_xml.vpc_access_connector:
+      return []
+    statements = ['vpc_access_connector:']
+    value = getattr(self.app_engine_web_xml.vpc_access_connector, 'name')
+    if value:
+      statements.append('  name: %s' % (value))
     return statements
 
   def TranslateBasicScaling(self):
@@ -284,7 +295,7 @@ class AppYamlTranslator(object):
     statements = ['readiness_check:']
     for attr in ('check_interval_sec', 'timeout_sec',
                  'failure_threshold', 'success_threshold',
-                 'host', 'path'):
+                 'host', 'path', 'app_start_timeout_sec'):
       value = getattr(readiness_check, attr, None)
       if value is not None:
         statements.append('  %s: %s' % (attr, value))

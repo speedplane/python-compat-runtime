@@ -17,9 +17,9 @@ from setuptools import setup
 
 setup(
     name='appengine-vm-runtime',
-    version='0.71',
-    description='Python Managed VMs Runtime',
-    url='https://github.com/GoogleCloudPlatform/python-compat-runtime',
+    version='0.72',
+    description='Python Managed VMs Runtime (Fork)',
+    url='https://github.com/speedplane/python-compat-runtime',
     author='Google',
     license='Apache License 2.0',
     include_package_data=True,

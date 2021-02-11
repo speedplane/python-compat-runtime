@@ -44,22 +44,32 @@ ResponseTuple = collections.namedtuple('ResponseTuple',
 
 # This must be kept in sync with dispatch_ah_url_path_prefix_whitelist in
 # google/production/borg/apphosting/templates/frontend.borg.
-DISPATCH_AH_URL_PATH_PREFIX_WHITELIST = ('/_ah/queue/deferred',)
+DISPATCH_AH_URL_PATH_PREFIX_WHITELIST = ('/_ah/queue/deferred',
+                                         '/_ah/api',)
 
 
 class PortRegistry(object):
+  """Thread-safe registry of port->service mapping.
+
+  Note a service can be either an application service defined in app.yaml or
+  the optional dispatcher service defined in dispatcher.yaml.
+  """
 
   def __init__(self):
     self._ports = {}
     self._ports_lock = threading.RLock()
 
-  def add(self, port, _module, inst):
+  def add(self, port, _service, inst):
     with self._ports_lock:
-      self._ports[port] = (_module, inst)
+      self._ports[port] = (_service, inst)
 
   def get(self, port):
     with self._ports_lock:
       return self._ports[port]
+
+  def has(self, port):
+    with self._ports_lock:
+      return port in self._ports
 
 
 class Dispatcher(request_info.Dispatcher):
@@ -78,11 +88,6 @@ class Dispatcher(request_info.Dispatcher):
                port,
                auth_domain,
                runtime_stderr_loglevel,
-
-
-
-
-
                php_config,
                python_config,
                java_config,
@@ -96,7 +101,10 @@ class Dispatcher(request_info.Dispatcher):
                automatic_restart,
                allow_skipped_files,
                module_to_threadsafe_override,
-               external_port):
+               external_port,
+               specified_service_ports=None,
+               enable_host_checking=True,
+               ssl_certificate_paths=None):
     """Initializer for Dispatcher.
 
     Args:
@@ -110,11 +118,6 @@ class Dispatcher(request_info.Dispatcher):
       runtime_stderr_loglevel: An int reprenting the minimum logging level at
           which runtime log messages should be written to stderr. See
           devappserver2.py for possible values.
-
-
-
-
-
       php_config: A runtime_config_pb2.PhpConfig instances containing PHP
           runtime-specific configuration. If None then defaults are used.
       python_config: A runtime_config_pb2.PythonConfig instance containing
@@ -153,12 +156,14 @@ class Dispatcher(request_info.Dispatcher):
           to listen, or None if there are no external modules. This will later
           be changed so that the association between external modules and their
           ports is more flexible.
+      specified_service_ports: A dict of string(service_name)->int(port number).
+          This allows services of given names to run on specified ports.
+      enable_host_checking: A bool indicating that HTTP Host checking should
+          be enforced for incoming requests.
+      ssl_certificate_paths: A ssl_utils.SSLCertificatePaths instance. If
+          specified, modules will be launched with SSL.
     """
     self._configuration = configuration
-
-
-
-
     self._php_config = php_config
     self._python_config = python_config
     self._java_config = java_config
@@ -172,7 +177,7 @@ class Dispatcher(request_info.Dispatcher):
     self._running_modules = []
     self._module_configurations = {}
     self._host = host
-    self._port = port
+    self._default_port = port
     self._auth_domain = auth_domain
     self._runtime_stderr_loglevel = runtime_stderr_loglevel
     self._module_name_to_module = {}
@@ -190,8 +195,11 @@ class Dispatcher(request_info.Dispatcher):
     self._executor = scheduled_executor.ScheduledExecutor(_THREAD_POOL)
     self._port_registry = PortRegistry()
     self._external_port = external_port
+    self._specified_service_ports = specified_service_ports or {}
+    self._enable_host_checking = enable_host_checking
+    self._ssl_certificate_paths = ssl_certificate_paths
 
-  def start(self, api_host, api_port, request_data, grpc_apis=None):
+  def start(self, api_host, api_port, request_data):
     """Starts the configured modules.
 
     Args:
@@ -199,31 +207,74 @@ class Dispatcher(request_info.Dispatcher):
       api_port: The port that APIServer listens for RPC requests on.
       request_data: A wsgi_request_info.WSGIRequestInfo that will be provided
           with request information for use by API stubs.
-      grpc_apis: a list of apis that use grpc.
+
+    Raises:
+      RuntimeError: In case of cannot find port for a service.
     """
     self._api_host = api_host
     self._api_port = api_port
     self._request_data = request_data
-    self._grpc_apis = grpc_apis or []
-    port = self._port
     self._executor.start()
     if self._configuration.dispatch:
-      self._dispatch_server = wsgi_server.WsgiServer((self._host, port), self)
+      self._dispatch_server = wsgi_server.WsgiServer((self._host,
+                                                      self._default_port), self)
       self._dispatch_server.start()
       logging.info('Starting dispatcher running at: http://%s:%s', self._host,
                    self._dispatch_server.port)
       self._update_checking_thread.start()
-      if port:
-        port += 1
       self._port_registry.add(self._dispatch_server.port, None, None)
+
+    next_available_port = self._default_port
     for module_configuration in self._configuration.modules:
-      self._module_configurations[
-          module_configuration.module_name] = module_configuration
-      _module, port = self._create_module(module_configuration, port)
-      _module.start()
-      self._module_name_to_module[module_configuration.module_name] = _module
-      logging.info('Starting module "%s" running at: http://%s',
-                   module_configuration.module_name, _module.balanced_address)
+      service_name = module_configuration.module_name
+      self._module_configurations[service_name] = module_configuration
+
+      service_port = 0
+      if service_name in self._specified_service_ports:
+        service_port = self._specified_service_ports[service_name]
+      elif next_available_port:
+        next_available_port = self._find_next_available_port(
+            next_available_port, service_name)
+        service_port = next_available_port
+
+      # If necessary, find an additional port to bind to for accepting https
+      # connections
+      ssl_port = None
+      if self._ssl_certificate_paths:
+        ssl_port = self._find_next_available_port(service_port + 1,
+                                                  service_name)
+
+      _service = self._create_module(module_configuration, service_port,
+                                     ssl_port)
+      _service.start()
+      self._module_name_to_module[module_configuration.module_name] = _service
+
+      log_message = 'Starting module "%s" running at: http://%s' % (
+          module_configuration.module_name, _service.balanced_address)
+      if ssl_port:
+        log_message += ' and https://%s:%s' % (self._host, ssl_port)
+      logging.info(log_message)
+
+  def _find_next_available_port(self, starting_port, service_name):
+    """Finds an available port in the port registry starting at starting_port.
+
+    Args:
+      starting_port: int, the port to start searching from.
+      service_name: str, the name of the service used in exception if no port
+        could be found.
+
+    Raises:
+      RuntimeError: If no port can be found.
+
+    Returns:
+      A port that is available for binding to.
+    """
+    next_available_port = starting_port
+    while self._port_registry.has(next_available_port):
+      next_available_port += 1
+    if next_available_port >= (1 << 16):
+      raise RuntimeError('Cannot find port for service %s' % service_name)
+    return next_available_port
 
   @property
   def dispatch_port(self):
@@ -286,7 +337,7 @@ class Dispatcher(request_info.Dispatcher):
                         '.'.join(map(str,
                                      runtime_factories.PYTHON27_PROD_VERSION)))
 
-  def _create_module(self, module_configuration, port):
+  def _create_module(self, module_configuration, port, ssl_port=None):
     self.check_python_version(module_configuration.runtime)
     max_instances = self._module_to_max_instances.get(
         module_configuration.module_name)
@@ -294,14 +345,11 @@ class Dispatcher(request_info.Dispatcher):
         module_configuration.module_name)
 
     if self._external_port:
-      # TODO: clean this up
       module_configuration.external_port = self._external_port
       module_class = module.ExternalModule
-    elif (module_configuration.manual_scaling or
-          module_configuration.runtime == 'vm'):
-      # TODO: Remove this 'or' when we support auto-scaled VMs.
+    elif module_configuration.is_manual_scaling:
       module_class = module.ManualScalingModule
-    elif module_configuration.basic_scaling:
+    elif module_configuration.is_basic_scaling:
       module_class = module.BasicScalingModule
     else:
       module_class = module.AutoScalingModule
@@ -314,11 +362,6 @@ class Dispatcher(request_info.Dispatcher):
         api_port=self._api_port,
         auth_domain=self._auth_domain,
         runtime_stderr_loglevel=self._runtime_stderr_loglevel,
-
-
-
-
-
         php_config=self._php_config,
         python_config=self._python_config,
         custom_config=self._custom_config,
@@ -326,7 +369,7 @@ class Dispatcher(request_info.Dispatcher):
         go_config=self._go_config,
         cloud_sql_config=self._cloud_sql_config,
         vm_config=self._vm_config,
-        default_version_port=self._port,
+        default_version_port=self._default_port,
         port_registry=self._port_registry,
         request_data=self._request_data,
         dispatcher=self,
@@ -336,9 +379,11 @@ class Dispatcher(request_info.Dispatcher):
         automatic_restarts=self._automatic_restart,
         allow_skipped_files=self._allow_skipped_files,
         threadsafe_override=threadsafe_override,
-        grpc_apis=self._grpc_apis)
+        enable_host_checking=self._enable_host_checking,
+        ssl_certificate_paths=self._ssl_certificate_paths,
+        ssl_port=ssl_port)
 
-    return module_instance, (0 if port == 0 else port + 1)
+    return module_instance
 
   @property
   def modules(self):
@@ -735,10 +780,10 @@ class Dispatcher(request_info.Dispatcher):
     Raises:
       request_info.ModuleDoesNotExistError: if hostname is not known.
     """
-    if self._port == 80:
+    if self._default_port == 80:
       default_address = self.host
     else:
-      default_address = '%s:%s' % (self.host, self._port)
+      default_address = '%s:%s' % (self.host, self._default_port)
     if not hostname or hostname == default_address:
       return self._module_for_request(path), None
 

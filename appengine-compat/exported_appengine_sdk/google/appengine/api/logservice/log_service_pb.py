@@ -18,8 +18,34 @@
 
 
 from google.net.proto import ProtocolBuffer
+import abc
 import array
-import dummy_thread as thread
+import base64
+try:
+  from thread import allocate_lock as _Lock
+except ImportError:
+  from threading import Lock as _Lock
+try:
+  from google3.net.proto import _net_proto___parse__python
+except ImportError:
+  _net_proto___parse__python = None
+import sys
+try:
+  __import__('google.net.rpc.python.proto_python_api_1_stub')
+  __import__('google.net.rpc.python.pywraprpc')
+  proto_python_api_1_stub = sys.modules.get('google.net.rpc.python.proto_python_api_1_stub')
+  pywraprpc = sys.modules.get('google.net.rpc.python.pywraprpc')
+  _client_stub_base_class = proto_python_api_1_stub.Stub
+except ImportError:
+  _client_stub_base_class = object
+try:
+  __import__('google.net.rpc.python.rpcserver')
+  rpcserver = sys.modules.get('google.net.rpc.python.rpcserver')
+  _server_stub_base_class = rpcserver.BaseRpcServer
+except ImportError:
+  _server_stub_base_class = object
+
+if hasattr(__builtins__, 'xrange'): range = xrange
 
 if hasattr(ProtocolBuffer, 'ExtendableProtocolMessage'):
   _extension_runtime = True
@@ -59,6 +85,33 @@ class LogServiceError(ProtocolBuffer.ProtocolMessage):
   def MergeFrom(self, x):
     assert x is not self
 
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.LogServiceError', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.LogServiceError')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.LogServiceError')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.LogServiceError', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.LogServiceError', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.LogServiceError', s)
+
+
   def Equals(self, x):
     if x is self: return 1
     return 1
@@ -89,7 +142,7 @@ class LogServiceError(ProtocolBuffer.ProtocolMessage):
       tt = d.getVarInt32()
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -99,7 +152,7 @@ class LogServiceError(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
 
   _TEXT = _BuildTagLookupTable({
@@ -114,6 +167,12 @@ class LogServiceError(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.LogServiceError'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChphcHBob3N0aW5nLkxvZ1NlcnZpY2VFcnJvcnN6CUVycm9yQ29kZYsBkgECT0uYAQCMAYsBkgEPSU5WQUxJRF9SRVFVRVNUmAEBjAGLAZIBDVNUT1JBR0VfRVJST1KYAQKMAXS6AfYaCithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvEgphcHBob3N0aW5nGh1hcHBob3N0aW5nL2FwaS9hcGlfYmFzZS5wcm90bxobYXBwaG9zdGluZy9hcGkvc291cmNlLnByb3RvIk4KD0xvZ1NlcnZpY2VFcnJvciI7CglFcnJvckNvZGUSBgoCT0sQABITCg9JTlZBTElEX1JFUVVFU1QQARIRCg1TVE9SQUdFX0VSUk9SEAIifQoOVXNlckFwcExvZ0xpbmUSFgoOdGltZXN0YW1wX3VzZWMYASACKAMSDQoFbGV2ZWwYAiACKAMSDwoHbWVzc2FnZRgDIAIoCRIzCg9zb3VyY2VfbG9jYXRpb24YBCABKAsyGi5hcHBob3N0aW5nLlNvdXJjZUxvY2F0aW9uIj8KD1VzZXJBcHBMb2dHcm91cBIsCghsb2dfbGluZRgCIAMoCzIaLmFwcGhvc3RpbmcuVXNlckFwcExvZ0xpbmUiHAoMRmx1c2hSZXF1ZXN0EgwKBGxvZ3MYASABKAwiIgoQU2V0U3RhdHVzUmVxdWVzdBIOCgZzdGF0dXMYASACKAkiQgoJTG9nT2Zmc2V0EhIKCnJlcXVlc3RfaWQYASABKAwSIQoZZGVwcmVjYXRlZF9yZXF1ZXN0X2lkX3NldBhlIAEoCCJwCgdMb2dMaW5lEgwKBHRpbWUYASACKAMSDQoFbGV2ZWwYAiACKAUSEwoLbG9nX21lc3NhZ2UYAyACKAkSMwoPc291cmNlX2xvY2F0aW9uGAQgASgLMhouYXBwaG9zdGluZy5Tb3VyY2VMb2NhdGlvbiLiBgoKUmVxdWVzdExvZxIOCgZhcHBfaWQYASACKAkSGgoJbW9kdWxlX2lkGCUgASgJOgdkZWZhdWx0EhIKCnZlcnNpb25faWQYAiACKAkSEgoKcmVxdWVzdF9pZBgDIAIoDBIlCgZvZmZzZXQYIyABKAsyFS5hcHBob3N0aW5nLkxvZ09mZnNldBIKCgJpcBgEIAIoCRIQCghuaWNrbmFtZRgFIAEoCRISCgpzdGFydF90aW1lGAYgAigDEhAKCGVuZF90aW1lGAcgAigDEg8KB2xhdGVuY3kYCCACKAMSDwoHbWN5Y2xlcxgJIAIoAxIOCgZtZXRob2QYCiACKAkSEAoIcmVzb3VyY2UYCyACKAkSFAoMaHR0cF92ZXJzaW9uGAwgAigJEg4KBnN0YXR1cxgNIAIoBRIVCg1yZXNwb25zZV9zaXplGA4gAigDEhAKCHJlZmVycmVyGA8gASgJEhIKCnVzZXJfYWdlbnQYECABKAkSFQoNdXJsX21hcF9lbnRyeRgRIAIoCRIQCghjb21iaW5lZBgSIAIoCRITCgthcGlfbWN5Y2xlcxgTIAEoAxIMCgRob3N0GBQgASgJEgwKBGNvc3QYFSABKAESFwoPdGFza19xdWV1ZV9uYW1lGBYgASgJEhEKCXRhc2tfbmFtZRgXIAEoCRIbChN3YXNfbG9hZGluZ19yZXF1ZXN0GBggASgIEhQKDHBlbmRpbmdfdGltZRgZIAEoAxIZCg1yZXBsaWNhX2luZGV4GBogASgFOgItMRIWCghmaW5pc2hlZBgbIAEoCDoEdHJ1ZRIRCgljbG9uZV9rZXkYHCABKAwSIQoEbGluZRgdIAMoCzITLmFwcGhvc3RpbmcuTG9nTGluZRIYChBsaW5lc19pbmNvbXBsZXRlGCQgASgIEhoKEmFwcF9lbmdpbmVfcmVsZWFzZRgmIAEoDBIQCgh0cmFjZV9pZBgnIAEoCRITCgtleGl0X3JlYXNvbhgeIAEoBRIeChZ3YXNfdGhyb3R0bGVkX2Zvcl90aW1lGB8gASgIEiIKGndhc190aHJvdHRsZWRfZm9yX3JlcXVlc3RzGCAgASgIEhYKDnRocm90dGxlZF90aW1lGCEgASgDEhMKC3NlcnZlcl9uYW1lGCIgASgMIocBChBMb2dNb2R1bGVWZXJzaW9uEhoKCW1vZHVsZV9pZBgBIAEoCToHZGVmYXVsdBISCgp2ZXJzaW9uX2lkGAIgASgJEiAKGGRlcHJlY2F0ZWRfbW9kdWxlX2lkX3NldBhlIAEoCBIhChlkZXByZWNhdGVkX3ZlcnNpb25faWRfc2V0GGYgASgIIrcGCg5Mb2dSZWFkUmVxdWVzdBIOCgZhcHBfaWQYASACKAkSEgoKdmVyc2lvbl9pZBgCIAMoCRI0Cg5tb2R1bGVfdmVyc2lvbhgTIAMoCzIcLmFwcGhvc3RpbmcuTG9nTW9kdWxlVmVyc2lvbhISCgpzdGFydF90aW1lGAMgASgDEhAKCGVuZF90aW1lGAQgASgDEiUKBm9mZnNldBgFIAEoCzIVLmFwcGhvc3RpbmcuTG9nT2Zmc2V0EhIKCnJlcXVlc3RfaWQYBiADKAwSGQoRbWluaW11bV9sb2dfbGV2ZWwYByABKAUSGgoSaW5jbHVkZV9pbmNvbXBsZXRlGAggASgIEg0KBWNvdW50GAkgASgDEhoKEmNvbWJpbmVkX2xvZ19yZWdleBgOIAEoCRISCgpob3N0X3JlZ2V4GA8gASgJEhUKDXJlcGxpY2FfaW5kZXgYECABKAUSGAoQaW5jbHVkZV9hcHBfbG9ncxgKIAEoCBIcChRhcHBfbG9nc19wZXJfcmVxdWVzdBgRIAEoBRIUCgxpbmNsdWRlX2hvc3QYCyABKAgSEwoLaW5jbHVkZV9hbGwYDCABKAgSFgoOY2FjaGVfaXRlcmF0b3IYDSABKAgSEgoKbnVtX3NoYXJkcxgSIAEoBRIhChlkZXByZWNhdGVkX3N0YXJ0X3RpbWVfc2V0GGcgASgIEh8KF2RlcHJlY2F0ZWRfZW5kX3RpbWVfc2V0GGggASgIEigKIGRlcHJlY2F0ZWRfbWluaW11bV9sb2dfbGV2ZWxfc2V0GGsgASgIEhwKFGRlcHJlY2F0ZWRfY291bnRfc2V0GG0gASgIEikKIWRlcHJlY2F0ZWRfY29tYmluZWRfbG9nX3JlZ2V4X3NldBhyIAEoCBIhChlkZXByZWNhdGVkX2hvc3RfcmVnZXhfc2V0GHMgASgIEiQKHGRlcHJlY2F0ZWRfcmVwbGljYV9pbmRleF9zZXQYdCABKAgSKwojZGVwcmVjYXRlZF9hcHBfbG9nc19wZXJfcmVxdWVzdF9zZXQYdSABKAgSIQoZZGVwcmVjYXRlZF9udW1fc2hhcmRzX3NldBh2IAEoCCJ0Cg9Mb2dSZWFkUmVzcG9uc2USIwoDbG9nGAEgAygLMhYuYXBwaG9zdGluZy5SZXF1ZXN0TG9nEiUKBm9mZnNldBgCIAEoCzIVLmFwcGhvc3RpbmcuTG9nT2Zmc2V0EhUKDWxhc3RfZW5kX3RpbWUYAyABKAMifgoOTG9nVXNhZ2VSZWNvcmQSEgoKdmVyc2lvbl9pZBgBIAEoCRISCgpzdGFydF90aW1lGAIgASgFEhAKCGVuZF90aW1lGAMgASgFEg0KBWNvdW50GAQgASgDEhIKCnRvdGFsX3NpemUYBSABKAMSDwoHcmVjb3JkcxgGIAEoBSKPAgoPTG9nVXNhZ2VSZXF1ZXN0Eg4KBmFwcF9pZBgBIAIoCRISCgp2ZXJzaW9uX2lkGAIgAygJEhIKCnN0YXJ0X3RpbWUYAyABKAUSEAoIZW5kX3RpbWUYBCABKAUSGwoQcmVzb2x1dGlvbl9ob3VycxgFIAEoDToBMRIYChBjb21iaW5lX3ZlcnNpb25zGAYgASgIEhUKDXVzYWdlX3ZlcnNpb24YByABKAUSFQoNdmVyc2lvbnNfb25seRgIIAEoCBInCh9kZXByZWNhdGVkX3Jlc29sdXRpb25faG91cnNfc2V0GGkgASgIEiQKHGRlcHJlY2F0ZWRfdXNhZ2VfdmVyc2lvbl9zZXQYayABKAgiagoQTG9nVXNhZ2VSZXNwb25zZRIpCgV1c2FnZRgBIAMoCzIaLmFwcGhvc3RpbmcuTG9nVXNhZ2VSZWNvcmQSKwoHc3VtbWFyeRgCIAEoCzIaLmFwcGhvc3RpbmcuTG9nVXNhZ2VSZWNvcmQynwIKCkxvZ1NlcnZpY2USPwoFRmx1c2gSGC5hcHBob3N0aW5nLkZsdXNoUmVxdWVzdBoaLmFwcGhvc3RpbmcuYmFzZS5Wb2lkUHJvdG8iABJHCglTZXRTdGF0dXMSHC5hcHBob3N0aW5nLlNldFN0YXR1c1JlcXVlc3QaGi5hcHBob3N0aW5nLmJhc2UuVm9pZFByb3RvIgASQQoEUmVhZBIaLmFwcGhvc3RpbmcuTG9nUmVhZFJlcXVlc3QaGy5hcHBob3N0aW5nLkxvZ1JlYWRSZXNwb25zZSIAEkQKBVVzYWdlEhsuYXBwaG9zdGluZy5Mb2dVc2FnZVJlcXVlc3QaHC5hcHBob3N0aW5nLkxvZ1VzYWdlUmVzcG9uc2UiAEI4CiRjb20uZ29vZ2xlLmFwcGhvc3RpbmcuYXBpLmxvZ3NlcnZpY2UQAigBQgxMb2dTZXJ2aWNlUGI="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class UserAppLogLine(ProtocolBuffer.ProtocolMessage):
   has_timestamp_usec_ = 0
   timestamp_usec_ = 0
@@ -125,7 +184,7 @@ class UserAppLogLine(ProtocolBuffer.ProtocolMessage):
   source_location_ = None
 
   def __init__(self, contents=None):
-    self.lazy_init_lock_ = thread.allocate_lock()
+    self.lazy_init_lock_ = _Lock()
     if contents is not None: self.MergeFromString(contents)
 
   def timestamp_usec(self): return self.timestamp_usec_
@@ -171,7 +230,7 @@ class UserAppLogLine(ProtocolBuffer.ProtocolMessage):
     if self.source_location_ is None:
       self.lazy_init_lock_.acquire()
       try:
-        if self.source_location_ is None: self.source_location_ = SourceLocation()
+        if self.source_location_ is None: self.source_location_ = google.appengine.api.source_pb.SourceLocation()
       finally:
         self.lazy_init_lock_.release()
     return self.source_location_
@@ -193,6 +252,33 @@ class UserAppLogLine(ProtocolBuffer.ProtocolMessage):
     if (x.has_level()): self.set_level(x.level())
     if (x.has_message()): self.set_message(x.message())
     if (x.has_source_location()): self.mutable_source_location().MergeFrom(x.source_location())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.UserAppLogLine', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.UserAppLogLine')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.UserAppLogLine')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.UserAppLogLine', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.UserAppLogLine', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.UserAppLogLine', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -298,7 +384,7 @@ class UserAppLogLine(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -315,7 +401,7 @@ class UserAppLogLine(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   ktimestamp_usec = 1
   klevel = 2
@@ -342,6 +428,12 @@ class UserAppLogLine(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.UserAppLogLine'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChlhcHBob3N0aW5nLlVzZXJBcHBMb2dMaW5lExoOdGltZXN0YW1wX3VzZWMgASgAMAM4AhQTGgVsZXZlbCACKAAwAzgCFBMaB21lc3NhZ2UgAygCMAk4AhQTGg9zb3VyY2VfbG9jYXRpb24gBCgCMAs4AUoZYXBwaG9zdGluZy5Tb3VyY2VMb2NhdGlvbqMBqgEFY3R5cGWyAQZwcm90bzKkARTCARphcHBob3N0aW5nLkxvZ1NlcnZpY2VFcnJvcg=="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class UserAppLogGroup(ProtocolBuffer.ProtocolMessage):
 
   def __init__(self, contents=None):
@@ -367,7 +459,34 @@ class UserAppLogGroup(ProtocolBuffer.ProtocolMessage):
 
   def MergeFrom(self, x):
     assert x is not self
-    for i in xrange(x.log_line_size()): self.add_log_line().CopyFrom(x.log_line(i))
+    for i in range(x.log_line_size()): self.add_log_line().CopyFrom(x.log_line(i))
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.UserAppLogGroup', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.UserAppLogGroup')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.UserAppLogGroup')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.UserAppLogGroup', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.UserAppLogGroup', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.UserAppLogGroup', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -385,26 +504,26 @@ class UserAppLogGroup(ProtocolBuffer.ProtocolMessage):
   def ByteSize(self):
     n = 0
     n += 1 * len(self.log_line_)
-    for i in xrange(len(self.log_line_)): n += self.lengthString(self.log_line_[i].ByteSize())
+    for i in range(len(self.log_line_)): n += self.lengthString(self.log_line_[i].ByteSize())
     return n
 
   def ByteSizePartial(self):
     n = 0
     n += 1 * len(self.log_line_)
-    for i in xrange(len(self.log_line_)): n += self.lengthString(self.log_line_[i].ByteSizePartial())
+    for i in range(len(self.log_line_)): n += self.lengthString(self.log_line_[i].ByteSizePartial())
     return n
 
   def Clear(self):
     self.clear_log_line()
 
   def OutputUnchecked(self, out):
-    for i in xrange(len(self.log_line_)):
+    for i in range(len(self.log_line_)):
       out.putVarInt32(18)
       out.putVarInt32(self.log_line_[i].ByteSize())
       self.log_line_[i].OutputUnchecked(out)
 
   def OutputPartial(self, out):
-    for i in xrange(len(self.log_line_)):
+    for i in range(len(self.log_line_)):
       out.putVarInt32(18)
       out.putVarInt32(self.log_line_[i].ByteSizePartial())
       self.log_line_[i].OutputPartial(out)
@@ -420,7 +539,7 @@ class UserAppLogGroup(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -438,7 +557,7 @@ class UserAppLogGroup(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   klog_line = 2
 
@@ -456,6 +575,12 @@ class UserAppLogGroup(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.UserAppLogGroup'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChphcHBob3N0aW5nLlVzZXJBcHBMb2dHcm91cBMaCGxvZ19saW5lIAIoAjALOANKGWFwcGhvc3RpbmcuVXNlckFwcExvZ0xpbmWjAaoBBWN0eXBlsgEGcHJvdG8ypAEUwgEaYXBwaG9zdGluZy5Mb2dTZXJ2aWNlRXJyb3I="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class FlushRequest(ProtocolBuffer.ProtocolMessage):
   has_logs_ = 0
   logs_ = ""
@@ -480,6 +605,33 @@ class FlushRequest(ProtocolBuffer.ProtocolMessage):
   def MergeFrom(self, x):
     assert x is not self
     if (x.has_logs()): self.set_logs(x.logs())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.FlushRequest', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.FlushRequest')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.FlushRequest')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.FlushRequest', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.FlushRequest', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.FlushRequest', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -522,7 +674,7 @@ class FlushRequest(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -533,7 +685,7 @@ class FlushRequest(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   klogs = 1
 
@@ -551,6 +703,12 @@ class FlushRequest(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.FlushRequest'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChdhcHBob3N0aW5nLkZsdXNoUmVxdWVzdBMaBGxvZ3MgASgCMAk4ARTCARphcHBob3N0aW5nLkxvZ1NlcnZpY2VFcnJvcg=="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class SetStatusRequest(ProtocolBuffer.ProtocolMessage):
   has_status_ = 0
   status_ = ""
@@ -575,6 +733,33 @@ class SetStatusRequest(ProtocolBuffer.ProtocolMessage):
   def MergeFrom(self, x):
     assert x is not self
     if (x.has_status()): self.set_status(x.status())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.SetStatusRequest', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.SetStatusRequest')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.SetStatusRequest')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.SetStatusRequest', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.SetStatusRequest', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.SetStatusRequest', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -622,7 +807,7 @@ class SetStatusRequest(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -633,7 +818,7 @@ class SetStatusRequest(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kstatus = 1
 
@@ -651,11 +836,17 @@ class SetStatusRequest(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.SetStatusRequest'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChthcHBob3N0aW5nLlNldFN0YXR1c1JlcXVlc3QTGgZzdGF0dXMgASgCMAk4AhTCARphcHBob3N0aW5nLkxvZ1NlcnZpY2VFcnJvcg=="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class LogOffset(ProtocolBuffer.ProtocolMessage):
   has_request_id_ = 0
   request_id_ = ""
-  has_request_id_set_ = 0
-  request_id_set_ = 0
+  has_deprecated_request_id_set_ = 0
+  deprecated_request_id_set_ = 0
 
   def __init__(self, contents=None):
     if contents is not None: self.MergeFromString(contents)
@@ -673,31 +864,58 @@ class LogOffset(ProtocolBuffer.ProtocolMessage):
 
   def has_request_id(self): return self.has_request_id_
 
-  def request_id_set(self): return self.request_id_set_
+  def deprecated_request_id_set(self): return self.deprecated_request_id_set_
 
-  def set_request_id_set(self, x):
-    self.has_request_id_set_ = 1
-    self.request_id_set_ = x
+  def set_deprecated_request_id_set(self, x):
+    self.has_deprecated_request_id_set_ = 1
+    self.deprecated_request_id_set_ = x
 
-  def clear_request_id_set(self):
-    if self.has_request_id_set_:
-      self.has_request_id_set_ = 0
-      self.request_id_set_ = 0
+  def clear_deprecated_request_id_set(self):
+    if self.has_deprecated_request_id_set_:
+      self.has_deprecated_request_id_set_ = 0
+      self.deprecated_request_id_set_ = 0
 
-  def has_request_id_set(self): return self.has_request_id_set_
+  def has_deprecated_request_id_set(self): return self.has_deprecated_request_id_set_
 
 
   def MergeFrom(self, x):
     assert x is not self
     if (x.has_request_id()): self.set_request_id(x.request_id())
-    if (x.has_request_id_set()): self.set_request_id_set(x.request_id_set())
+    if (x.has_deprecated_request_id_set()): self.set_deprecated_request_id_set(x.deprecated_request_id_set())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.LogOffset', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.LogOffset')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.LogOffset')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.LogOffset', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.LogOffset', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.LogOffset', s)
+
 
   def Equals(self, x):
     if x is self: return 1
     if self.has_request_id_ != x.has_request_id_: return 0
     if self.has_request_id_ and self.request_id_ != x.request_id_: return 0
-    if self.has_request_id_set_ != x.has_request_id_set_: return 0
-    if self.has_request_id_set_ and self.request_id_set_ != x.request_id_set_: return 0
+    if self.has_deprecated_request_id_set_ != x.has_deprecated_request_id_set_: return 0
+    if self.has_deprecated_request_id_set_ and self.deprecated_request_id_set_ != x.deprecated_request_id_set_: return 0
     return 1
 
   def IsInitialized(self, debug_strs=None):
@@ -707,34 +925,34 @@ class LogOffset(ProtocolBuffer.ProtocolMessage):
   def ByteSize(self):
     n = 0
     if (self.has_request_id_): n += 1 + self.lengthString(len(self.request_id_))
-    if (self.has_request_id_set_): n += 3
+    if (self.has_deprecated_request_id_set_): n += 3
     return n
 
   def ByteSizePartial(self):
     n = 0
     if (self.has_request_id_): n += 1 + self.lengthString(len(self.request_id_))
-    if (self.has_request_id_set_): n += 3
+    if (self.has_deprecated_request_id_set_): n += 3
     return n
 
   def Clear(self):
     self.clear_request_id()
-    self.clear_request_id_set()
+    self.clear_deprecated_request_id_set()
 
   def OutputUnchecked(self, out):
     if (self.has_request_id_):
       out.putVarInt32(10)
       out.putPrefixedString(self.request_id_)
-    if (self.has_request_id_set_):
+    if (self.has_deprecated_request_id_set_):
       out.putVarInt32(808)
-      out.putBoolean(self.request_id_set_)
+      out.putBoolean(self.deprecated_request_id_set_)
 
   def OutputPartial(self, out):
     if (self.has_request_id_):
       out.putVarInt32(10)
       out.putPrefixedString(self.request_id_)
-    if (self.has_request_id_set_):
+    if (self.has_deprecated_request_id_set_):
       out.putVarInt32(808)
-      out.putBoolean(self.request_id_set_)
+      out.putBoolean(self.deprecated_request_id_set_)
 
   def TryMerge(self, d):
     while d.avail() > 0:
@@ -743,31 +961,31 @@ class LogOffset(ProtocolBuffer.ProtocolMessage):
         self.set_request_id(d.getPrefixedString())
         continue
       if tt == 808:
-        self.set_request_id_set(d.getBoolean())
+        self.set_deprecated_request_id_set(d.getBoolean())
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
   def __str__(self, prefix="", printElemNumber=0):
     res=""
     if self.has_request_id_: res+=prefix+("request_id: %s\n" % self.DebugFormatString(self.request_id_))
-    if self.has_request_id_set_: res+=prefix+("request_id_set: %s\n" % self.DebugFormatBool(self.request_id_set_))
+    if self.has_deprecated_request_id_set_: res+=prefix+("deprecated_request_id_set: %s\n" % self.DebugFormatBool(self.deprecated_request_id_set_))
     return res
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   krequest_id = 1
-  krequest_id_set = 101
+  kdeprecated_request_id_set = 101
 
   _TEXT = _BuildTagLookupTable({
     0: "ErrorCode",
     1: "request_id",
-    101: "request_id_set",
+    101: "deprecated_request_id_set",
   }, 101)
 
   _TYPES = _BuildTagLookupTable({
@@ -780,6 +998,12 @@ class LogOffset(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.LogOffset'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChRhcHBob3N0aW5nLkxvZ09mZnNldBMaCnJlcXVlc3RfaWQgASgCMAk4ARQTGhlkZXByZWNhdGVkX3JlcXVlc3RfaWRfc2V0IGUoADAIOAEUwgEaYXBwaG9zdGluZy5Mb2dTZXJ2aWNlRXJyb3I="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class LogLine(ProtocolBuffer.ProtocolMessage):
   has_time_ = 0
   time_ = 0
@@ -791,7 +1015,7 @@ class LogLine(ProtocolBuffer.ProtocolMessage):
   source_location_ = None
 
   def __init__(self, contents=None):
-    self.lazy_init_lock_ = thread.allocate_lock()
+    self.lazy_init_lock_ = _Lock()
     if contents is not None: self.MergeFromString(contents)
 
   def time(self): return self.time_
@@ -837,7 +1061,7 @@ class LogLine(ProtocolBuffer.ProtocolMessage):
     if self.source_location_ is None:
       self.lazy_init_lock_.acquire()
       try:
-        if self.source_location_ is None: self.source_location_ = SourceLocation()
+        if self.source_location_ is None: self.source_location_ = google.appengine.api.source_pb.SourceLocation()
       finally:
         self.lazy_init_lock_.release()
     return self.source_location_
@@ -859,6 +1083,33 @@ class LogLine(ProtocolBuffer.ProtocolMessage):
     if (x.has_level()): self.set_level(x.level())
     if (x.has_log_message()): self.set_log_message(x.log_message())
     if (x.has_source_location()): self.mutable_source_location().MergeFrom(x.source_location())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.LogLine', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.LogLine')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.LogLine')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.LogLine', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.LogLine', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.LogLine', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -964,7 +1215,7 @@ class LogLine(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -981,7 +1232,7 @@ class LogLine(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   ktime = 1
   klevel = 2
@@ -1008,6 +1259,12 @@ class LogLine(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.LogLine'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChJhcHBob3N0aW5nLkxvZ0xpbmUTGgR0aW1lIAEoADADOAIUExoFbGV2ZWwgAigAMAU4AhQTGgtsb2dfbWVzc2FnZSADKAIwCTgCFBMaD3NvdXJjZV9sb2NhdGlvbiAEKAIwCzgBShlhcHBob3N0aW5nLlNvdXJjZUxvY2F0aW9uowGqAQVjdHlwZbIBBnByb3RvMqQBFMIBGmFwcGhvc3RpbmcuTG9nU2VydmljZUVycm9y"))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class RequestLog(ProtocolBuffer.ProtocolMessage):
   has_app_id_ = 0
   app_id_ = ""
@@ -1088,7 +1345,7 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
 
   def __init__(self, contents=None):
     self.line_ = []
-    self.lazy_init_lock_ = thread.allocate_lock()
+    self.lazy_init_lock_ = _Lock()
     if contents is not None: self.MergeFromString(contents)
 
   def app_id(self): return self.app_id_
@@ -1640,7 +1897,7 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
     if (x.has_replica_index()): self.set_replica_index(x.replica_index())
     if (x.has_finished()): self.set_finished(x.finished())
     if (x.has_clone_key()): self.set_clone_key(x.clone_key())
-    for i in xrange(x.line_size()): self.add_line().CopyFrom(x.line(i))
+    for i in range(x.line_size()): self.add_line().CopyFrom(x.line(i))
     if (x.has_lines_incomplete()): self.set_lines_incomplete(x.lines_incomplete())
     if (x.has_app_engine_release()): self.set_app_engine_release(x.app_engine_release())
     if (x.has_trace_id()): self.set_trace_id(x.trace_id())
@@ -1649,6 +1906,33 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
     if (x.has_was_throttled_for_requests()): self.set_was_throttled_for_requests(x.was_throttled_for_requests())
     if (x.has_throttled_time()): self.set_throttled_time(x.throttled_time())
     if (x.has_server_name()): self.set_server_name(x.server_name())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.RequestLog', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.RequestLog')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.RequestLog')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.RequestLog', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.RequestLog', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.RequestLog', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -1833,7 +2117,7 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
     if (self.has_finished_): n += 3
     if (self.has_clone_key_): n += 2 + self.lengthString(len(self.clone_key_))
     n += 2 * len(self.line_)
-    for i in xrange(len(self.line_)): n += self.lengthString(self.line_[i].ByteSize())
+    for i in range(len(self.line_)): n += self.lengthString(self.line_[i].ByteSize())
     if (self.has_lines_incomplete_): n += 3
     if (self.has_app_engine_release_): n += 2 + self.lengthString(len(self.app_engine_release_))
     if (self.has_trace_id_): n += 2 + self.lengthString(len(self.trace_id_))
@@ -1907,7 +2191,7 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
     if (self.has_finished_): n += 3
     if (self.has_clone_key_): n += 2 + self.lengthString(len(self.clone_key_))
     n += 2 * len(self.line_)
-    for i in xrange(len(self.line_)): n += self.lengthString(self.line_[i].ByteSizePartial())
+    for i in range(len(self.line_)): n += self.lengthString(self.line_[i].ByteSizePartial())
     if (self.has_lines_incomplete_): n += 3
     if (self.has_app_engine_release_): n += 2 + self.lengthString(len(self.app_engine_release_))
     if (self.has_trace_id_): n += 2 + self.lengthString(len(self.trace_id_))
@@ -2029,7 +2313,7 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
     if (self.has_clone_key_):
       out.putVarInt32(226)
       out.putPrefixedString(self.clone_key_)
-    for i in xrange(len(self.line_)):
+    for i in range(len(self.line_)):
       out.putVarInt32(234)
       out.putVarInt32(self.line_[i].ByteSize())
       self.line_[i].OutputUnchecked(out)
@@ -2150,7 +2434,7 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
     if (self.has_clone_key_):
       out.putVarInt32(226)
       out.putPrefixedString(self.clone_key_)
-    for i in xrange(len(self.line_)):
+    for i in range(len(self.line_)):
       out.putVarInt32(234)
       out.putVarInt32(self.line_[i].ByteSizePartial())
       self.line_[i].OutputPartial(out)
@@ -2314,7 +2598,7 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -2373,7 +2657,7 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kapp_id = 1
   kmodule_id = 37
@@ -2505,15 +2789,21 @@ class RequestLog(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.RequestLog'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChVhcHBob3N0aW5nLlJlcXVlc3RMb2cTGgZhcHBfaWQgASgCMAk4AhQTGgltb2R1bGVfaWQgJSgCMAk4AUIHZGVmYXVsdKMBqgEHZGVmYXVsdLIBCSJkZWZhdWx0IqQBFBMaCnZlcnNpb25faWQgAigCMAk4AhQTGgpyZXF1ZXN0X2lkIAMoAjAJOAIUExoGb2Zmc2V0ICMoAjALOAFKFGFwcGhvc3RpbmcuTG9nT2Zmc2V0owGqAQVjdHlwZbIBBnByb3RvMqQBFBMaAmlwIAQoAjAJOAIUExoIbmlja25hbWUgBSgCMAk4ARQTGgpzdGFydF90aW1lIAYoADADOAIUExoIZW5kX3RpbWUgBygAMAM4AhQTGgdsYXRlbmN5IAgoADADOAIUExoHbWN5Y2xlcyAJKAAwAzgCFBMaBm1ldGhvZCAKKAIwCTgCFBMaCHJlc291cmNlIAsoAjAJOAIUExoMaHR0cF92ZXJzaW9uIAwoAjAJOAIUExoGc3RhdHVzIA0oADAFOAIUExoNcmVzcG9uc2Vfc2l6ZSAOKAAwAzgCFBMaCHJlZmVycmVyIA8oAjAJOAEUExoKdXNlcl9hZ2VudCAQKAIwCTgBFBMaDXVybF9tYXBfZW50cnkgESgCMAk4AhQTGghjb21iaW5lZCASKAIwCTgCFBMaC2FwaV9tY3ljbGVzIBMoADADOAEUExoEaG9zdCAUKAIwCTgBFBMaBGNvc3QgFSgBMAE4ARQTGg90YXNrX3F1ZXVlX25hbWUgFigCMAk4ARQTGgl0YXNrX25hbWUgFygCMAk4ARQTGhN3YXNfbG9hZGluZ19yZXF1ZXN0IBgoADAIOAEUExoMcGVuZGluZ190aW1lIBkoADADOAEUExoNcmVwbGljYV9pbmRleCAaKAAwBTgBQgItMaMBqgEHZGVmYXVsdLIBAi0xpAEUExoIZmluaXNoZWQgGygAMAg4AUIEdHJ1ZaMBqgEHZGVmYXVsdLIBBHRydWWkARQTGgljbG9uZV9rZXkgHCgCMAk4ARQTGgRsaW5lIB0oAjALOANKEmFwcGhvc3RpbmcuTG9nTGluZaMBqgEFY3R5cGWyAQZwcm90bzKkARQTGhBsaW5lc19pbmNvbXBsZXRlICQoADAIOAEUExoSYXBwX2VuZ2luZV9yZWxlYXNlICYoAjAJOAEUExoIdHJhY2VfaWQgJygCMAk4ARQTGgtleGl0X3JlYXNvbiAeKAAwBTgBFBMaFndhc190aHJvdHRsZWRfZm9yX3RpbWUgHygAMAg4ARQTGhp3YXNfdGhyb3R0bGVkX2Zvcl9yZXF1ZXN0cyAgKAAwCDgBFBMaDnRocm90dGxlZF90aW1lICEoADADOAEUExoLc2VydmVyX25hbWUgIigCMAk4ARTCARphcHBob3N0aW5nLkxvZ1NlcnZpY2VFcnJvcg=="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class LogModuleVersion(ProtocolBuffer.ProtocolMessage):
   has_module_id_ = 0
   module_id_ = "default"
-  has_module_id_set_ = 0
-  module_id_set_ = 0
   has_version_id_ = 0
   version_id_ = ""
-  has_version_id_set_ = 0
-  version_id_set_ = 0
+  has_deprecated_module_id_set_ = 0
+  deprecated_module_id_set_ = 0
+  has_deprecated_version_id_set_ = 0
+  deprecated_version_id_set_ = 0
 
   def __init__(self, contents=None):
     if contents is not None: self.MergeFromString(contents)
@@ -2531,19 +2821,6 @@ class LogModuleVersion(ProtocolBuffer.ProtocolMessage):
 
   def has_module_id(self): return self.has_module_id_
 
-  def module_id_set(self): return self.module_id_set_
-
-  def set_module_id_set(self, x):
-    self.has_module_id_set_ = 1
-    self.module_id_set_ = x
-
-  def clear_module_id_set(self):
-    if self.has_module_id_set_:
-      self.has_module_id_set_ = 0
-      self.module_id_set_ = 0
-
-  def has_module_id_set(self): return self.has_module_id_set_
-
   def version_id(self): return self.version_id_
 
   def set_version_id(self, x):
@@ -2557,37 +2834,77 @@ class LogModuleVersion(ProtocolBuffer.ProtocolMessage):
 
   def has_version_id(self): return self.has_version_id_
 
-  def version_id_set(self): return self.version_id_set_
+  def deprecated_module_id_set(self): return self.deprecated_module_id_set_
 
-  def set_version_id_set(self, x):
-    self.has_version_id_set_ = 1
-    self.version_id_set_ = x
+  def set_deprecated_module_id_set(self, x):
+    self.has_deprecated_module_id_set_ = 1
+    self.deprecated_module_id_set_ = x
 
-  def clear_version_id_set(self):
-    if self.has_version_id_set_:
-      self.has_version_id_set_ = 0
-      self.version_id_set_ = 0
+  def clear_deprecated_module_id_set(self):
+    if self.has_deprecated_module_id_set_:
+      self.has_deprecated_module_id_set_ = 0
+      self.deprecated_module_id_set_ = 0
 
-  def has_version_id_set(self): return self.has_version_id_set_
+  def has_deprecated_module_id_set(self): return self.has_deprecated_module_id_set_
+
+  def deprecated_version_id_set(self): return self.deprecated_version_id_set_
+
+  def set_deprecated_version_id_set(self, x):
+    self.has_deprecated_version_id_set_ = 1
+    self.deprecated_version_id_set_ = x
+
+  def clear_deprecated_version_id_set(self):
+    if self.has_deprecated_version_id_set_:
+      self.has_deprecated_version_id_set_ = 0
+      self.deprecated_version_id_set_ = 0
+
+  def has_deprecated_version_id_set(self): return self.has_deprecated_version_id_set_
 
 
   def MergeFrom(self, x):
     assert x is not self
     if (x.has_module_id()): self.set_module_id(x.module_id())
-    if (x.has_module_id_set()): self.set_module_id_set(x.module_id_set())
     if (x.has_version_id()): self.set_version_id(x.version_id())
-    if (x.has_version_id_set()): self.set_version_id_set(x.version_id_set())
+    if (x.has_deprecated_module_id_set()): self.set_deprecated_module_id_set(x.deprecated_module_id_set())
+    if (x.has_deprecated_version_id_set()): self.set_deprecated_version_id_set(x.deprecated_version_id_set())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.LogModuleVersion', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.LogModuleVersion')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.LogModuleVersion')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.LogModuleVersion', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.LogModuleVersion', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.LogModuleVersion', s)
+
 
   def Equals(self, x):
     if x is self: return 1
     if self.has_module_id_ != x.has_module_id_: return 0
     if self.has_module_id_ and self.module_id_ != x.module_id_: return 0
-    if self.has_module_id_set_ != x.has_module_id_set_: return 0
-    if self.has_module_id_set_ and self.module_id_set_ != x.module_id_set_: return 0
     if self.has_version_id_ != x.has_version_id_: return 0
     if self.has_version_id_ and self.version_id_ != x.version_id_: return 0
-    if self.has_version_id_set_ != x.has_version_id_set_: return 0
-    if self.has_version_id_set_ and self.version_id_set_ != x.version_id_set_: return 0
+    if self.has_deprecated_module_id_set_ != x.has_deprecated_module_id_set_: return 0
+    if self.has_deprecated_module_id_set_ and self.deprecated_module_id_set_ != x.deprecated_module_id_set_: return 0
+    if self.has_deprecated_version_id_set_ != x.has_deprecated_version_id_set_: return 0
+    if self.has_deprecated_version_id_set_ and self.deprecated_version_id_set_ != x.deprecated_version_id_set_: return 0
     return 1
 
   def IsInitialized(self, debug_strs=None):
@@ -2597,24 +2914,24 @@ class LogModuleVersion(ProtocolBuffer.ProtocolMessage):
   def ByteSize(self):
     n = 0
     if (self.has_module_id_): n += 1 + self.lengthString(len(self.module_id_))
-    if (self.has_module_id_set_): n += 3
     if (self.has_version_id_): n += 1 + self.lengthString(len(self.version_id_))
-    if (self.has_version_id_set_): n += 3
+    if (self.has_deprecated_module_id_set_): n += 3
+    if (self.has_deprecated_version_id_set_): n += 3
     return n
 
   def ByteSizePartial(self):
     n = 0
     if (self.has_module_id_): n += 1 + self.lengthString(len(self.module_id_))
-    if (self.has_module_id_set_): n += 3
     if (self.has_version_id_): n += 1 + self.lengthString(len(self.version_id_))
-    if (self.has_version_id_set_): n += 3
+    if (self.has_deprecated_module_id_set_): n += 3
+    if (self.has_deprecated_version_id_set_): n += 3
     return n
 
   def Clear(self):
     self.clear_module_id()
-    self.clear_module_id_set()
     self.clear_version_id()
-    self.clear_version_id_set()
+    self.clear_deprecated_module_id_set()
+    self.clear_deprecated_version_id_set()
 
   def OutputUnchecked(self, out):
     if (self.has_module_id_):
@@ -2623,12 +2940,12 @@ class LogModuleVersion(ProtocolBuffer.ProtocolMessage):
     if (self.has_version_id_):
       out.putVarInt32(18)
       out.putPrefixedString(self.version_id_)
-    if (self.has_module_id_set_):
+    if (self.has_deprecated_module_id_set_):
       out.putVarInt32(808)
-      out.putBoolean(self.module_id_set_)
-    if (self.has_version_id_set_):
+      out.putBoolean(self.deprecated_module_id_set_)
+    if (self.has_deprecated_version_id_set_):
       out.putVarInt32(816)
-      out.putBoolean(self.version_id_set_)
+      out.putBoolean(self.deprecated_version_id_set_)
 
   def OutputPartial(self, out):
     if (self.has_module_id_):
@@ -2637,12 +2954,12 @@ class LogModuleVersion(ProtocolBuffer.ProtocolMessage):
     if (self.has_version_id_):
       out.putVarInt32(18)
       out.putPrefixedString(self.version_id_)
-    if (self.has_module_id_set_):
+    if (self.has_deprecated_module_id_set_):
       out.putVarInt32(808)
-      out.putBoolean(self.module_id_set_)
-    if (self.has_version_id_set_):
+      out.putBoolean(self.deprecated_module_id_set_)
+    if (self.has_deprecated_version_id_set_):
       out.putVarInt32(816)
-      out.putBoolean(self.version_id_set_)
+      out.putBoolean(self.deprecated_version_id_set_)
 
   def TryMerge(self, d):
     while d.avail() > 0:
@@ -2654,40 +2971,40 @@ class LogModuleVersion(ProtocolBuffer.ProtocolMessage):
         self.set_version_id(d.getPrefixedString())
         continue
       if tt == 808:
-        self.set_module_id_set(d.getBoolean())
+        self.set_deprecated_module_id_set(d.getBoolean())
         continue
       if tt == 816:
-        self.set_version_id_set(d.getBoolean())
+        self.set_deprecated_version_id_set(d.getBoolean())
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
   def __str__(self, prefix="", printElemNumber=0):
     res=""
     if self.has_module_id_: res+=prefix+("module_id: %s\n" % self.DebugFormatString(self.module_id_))
-    if self.has_module_id_set_: res+=prefix+("module_id_set: %s\n" % self.DebugFormatBool(self.module_id_set_))
     if self.has_version_id_: res+=prefix+("version_id: %s\n" % self.DebugFormatString(self.version_id_))
-    if self.has_version_id_set_: res+=prefix+("version_id_set: %s\n" % self.DebugFormatBool(self.version_id_set_))
+    if self.has_deprecated_module_id_set_: res+=prefix+("deprecated_module_id_set: %s\n" % self.DebugFormatBool(self.deprecated_module_id_set_))
+    if self.has_deprecated_version_id_set_: res+=prefix+("deprecated_version_id_set: %s\n" % self.DebugFormatBool(self.deprecated_version_id_set_))
     return res
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kmodule_id = 1
-  kmodule_id_set = 101
   kversion_id = 2
-  kversion_id_set = 102
+  kdeprecated_module_id_set = 101
+  kdeprecated_version_id_set = 102
 
   _TEXT = _BuildTagLookupTable({
     0: "ErrorCode",
     1: "module_id",
     2: "version_id",
-    101: "module_id_set",
-    102: "version_id_set",
+    101: "deprecated_module_id_set",
+    102: "deprecated_version_id_set",
   }, 102)
 
   _TYPES = _BuildTagLookupTable({
@@ -2702,47 +3019,37 @@ class LogModuleVersion(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.LogModuleVersion'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChthcHBob3N0aW5nLkxvZ01vZHVsZVZlcnNpb24TGgltb2R1bGVfaWQgASgCMAk4AUIHZGVmYXVsdKMBqgEHZGVmYXVsdLIBCSJkZWZhdWx0IqQBFBMaCnZlcnNpb25faWQgAigCMAk4ARQTGhhkZXByZWNhdGVkX21vZHVsZV9pZF9zZXQgZSgAMAg4ARQTGhlkZXByZWNhdGVkX3ZlcnNpb25faWRfc2V0IGYoADAIOAEUwgEaYXBwaG9zdGluZy5Mb2dTZXJ2aWNlRXJyb3I="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class LogReadRequest(ProtocolBuffer.ProtocolMessage):
   has_app_id_ = 0
   app_id_ = ""
   has_start_time_ = 0
   start_time_ = 0
-  has_start_time_set_ = 0
-  start_time_set_ = 0
   has_end_time_ = 0
   end_time_ = 0
-  has_end_time_set_ = 0
-  end_time_set_ = 0
   has_offset_ = 0
   offset_ = None
   has_minimum_log_level_ = 0
   minimum_log_level_ = 0
-  has_minimum_log_level_set_ = 0
-  minimum_log_level_set_ = 0
   has_include_incomplete_ = 0
   include_incomplete_ = 0
   has_count_ = 0
   count_ = 0
-  has_count_set_ = 0
-  count_set_ = 0
   has_combined_log_regex_ = 0
   combined_log_regex_ = ""
-  has_combined_log_regex_set_ = 0
-  combined_log_regex_set_ = 0
   has_host_regex_ = 0
   host_regex_ = ""
-  has_host_regex_set_ = 0
-  host_regex_set_ = 0
   has_replica_index_ = 0
   replica_index_ = 0
-  has_replica_index_set_ = 0
-  replica_index_set_ = 0
   has_include_app_logs_ = 0
   include_app_logs_ = 0
   has_app_logs_per_request_ = 0
   app_logs_per_request_ = 0
-  has_app_logs_per_request_set_ = 0
-  app_logs_per_request_set_ = 0
   has_include_host_ = 0
   include_host_ = 0
   has_include_all_ = 0
@@ -2751,14 +3058,30 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
   cache_iterator_ = 0
   has_num_shards_ = 0
   num_shards_ = 0
-  has_num_shards_set_ = 0
-  num_shards_set_ = 0
+  has_deprecated_start_time_set_ = 0
+  deprecated_start_time_set_ = 0
+  has_deprecated_end_time_set_ = 0
+  deprecated_end_time_set_ = 0
+  has_deprecated_minimum_log_level_set_ = 0
+  deprecated_minimum_log_level_set_ = 0
+  has_deprecated_count_set_ = 0
+  deprecated_count_set_ = 0
+  has_deprecated_combined_log_regex_set_ = 0
+  deprecated_combined_log_regex_set_ = 0
+  has_deprecated_host_regex_set_ = 0
+  deprecated_host_regex_set_ = 0
+  has_deprecated_replica_index_set_ = 0
+  deprecated_replica_index_set_ = 0
+  has_deprecated_app_logs_per_request_set_ = 0
+  deprecated_app_logs_per_request_set_ = 0
+  has_deprecated_num_shards_set_ = 0
+  deprecated_num_shards_set_ = 0
 
   def __init__(self, contents=None):
     self.version_id_ = []
     self.module_version_ = []
     self.request_id_ = []
-    self.lazy_init_lock_ = thread.allocate_lock()
+    self.lazy_init_lock_ = _Lock()
     if contents is not None: self.MergeFromString(contents)
 
   def app_id(self): return self.app_id_
@@ -2818,19 +3141,6 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
 
   def has_start_time(self): return self.has_start_time_
 
-  def start_time_set(self): return self.start_time_set_
-
-  def set_start_time_set(self, x):
-    self.has_start_time_set_ = 1
-    self.start_time_set_ = x
-
-  def clear_start_time_set(self):
-    if self.has_start_time_set_:
-      self.has_start_time_set_ = 0
-      self.start_time_set_ = 0
-
-  def has_start_time_set(self): return self.has_start_time_set_
-
   def end_time(self): return self.end_time_
 
   def set_end_time(self, x):
@@ -2843,19 +3153,6 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       self.end_time_ = 0
 
   def has_end_time(self): return self.has_end_time_
-
-  def end_time_set(self): return self.end_time_set_
-
-  def set_end_time_set(self, x):
-    self.has_end_time_set_ = 1
-    self.end_time_set_ = x
-
-  def clear_end_time_set(self):
-    if self.has_end_time_set_:
-      self.has_end_time_set_ = 0
-      self.end_time_set_ = 0
-
-  def has_end_time_set(self): return self.has_end_time_set_
 
   def offset(self):
     if self.offset_ is None:
@@ -2904,19 +3201,6 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
 
   def has_minimum_log_level(self): return self.has_minimum_log_level_
 
-  def minimum_log_level_set(self): return self.minimum_log_level_set_
-
-  def set_minimum_log_level_set(self, x):
-    self.has_minimum_log_level_set_ = 1
-    self.minimum_log_level_set_ = x
-
-  def clear_minimum_log_level_set(self):
-    if self.has_minimum_log_level_set_:
-      self.has_minimum_log_level_set_ = 0
-      self.minimum_log_level_set_ = 0
-
-  def has_minimum_log_level_set(self): return self.has_minimum_log_level_set_
-
   def include_incomplete(self): return self.include_incomplete_
 
   def set_include_incomplete(self, x):
@@ -2943,19 +3227,6 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
 
   def has_count(self): return self.has_count_
 
-  def count_set(self): return self.count_set_
-
-  def set_count_set(self, x):
-    self.has_count_set_ = 1
-    self.count_set_ = x
-
-  def clear_count_set(self):
-    if self.has_count_set_:
-      self.has_count_set_ = 0
-      self.count_set_ = 0
-
-  def has_count_set(self): return self.has_count_set_
-
   def combined_log_regex(self): return self.combined_log_regex_
 
   def set_combined_log_regex(self, x):
@@ -2968,19 +3239,6 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       self.combined_log_regex_ = ""
 
   def has_combined_log_regex(self): return self.has_combined_log_regex_
-
-  def combined_log_regex_set(self): return self.combined_log_regex_set_
-
-  def set_combined_log_regex_set(self, x):
-    self.has_combined_log_regex_set_ = 1
-    self.combined_log_regex_set_ = x
-
-  def clear_combined_log_regex_set(self):
-    if self.has_combined_log_regex_set_:
-      self.has_combined_log_regex_set_ = 0
-      self.combined_log_regex_set_ = 0
-
-  def has_combined_log_regex_set(self): return self.has_combined_log_regex_set_
 
   def host_regex(self): return self.host_regex_
 
@@ -2995,19 +3253,6 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
 
   def has_host_regex(self): return self.has_host_regex_
 
-  def host_regex_set(self): return self.host_regex_set_
-
-  def set_host_regex_set(self, x):
-    self.has_host_regex_set_ = 1
-    self.host_regex_set_ = x
-
-  def clear_host_regex_set(self):
-    if self.has_host_regex_set_:
-      self.has_host_regex_set_ = 0
-      self.host_regex_set_ = 0
-
-  def has_host_regex_set(self): return self.has_host_regex_set_
-
   def replica_index(self): return self.replica_index_
 
   def set_replica_index(self, x):
@@ -3020,19 +3265,6 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       self.replica_index_ = 0
 
   def has_replica_index(self): return self.has_replica_index_
-
-  def replica_index_set(self): return self.replica_index_set_
-
-  def set_replica_index_set(self, x):
-    self.has_replica_index_set_ = 1
-    self.replica_index_set_ = x
-
-  def clear_replica_index_set(self):
-    if self.has_replica_index_set_:
-      self.has_replica_index_set_ = 0
-      self.replica_index_set_ = 0
-
-  def has_replica_index_set(self): return self.has_replica_index_set_
 
   def include_app_logs(self): return self.include_app_logs_
 
@@ -3059,19 +3291,6 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       self.app_logs_per_request_ = 0
 
   def has_app_logs_per_request(self): return self.has_app_logs_per_request_
-
-  def app_logs_per_request_set(self): return self.app_logs_per_request_set_
-
-  def set_app_logs_per_request_set(self, x):
-    self.has_app_logs_per_request_set_ = 1
-    self.app_logs_per_request_set_ = x
-
-  def clear_app_logs_per_request_set(self):
-    if self.has_app_logs_per_request_set_:
-      self.has_app_logs_per_request_set_ = 0
-      self.app_logs_per_request_set_ = 0
-
-  def has_app_logs_per_request_set(self): return self.has_app_logs_per_request_set_
 
   def include_host(self): return self.include_host_
 
@@ -3125,50 +3344,181 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
 
   def has_num_shards(self): return self.has_num_shards_
 
-  def num_shards_set(self): return self.num_shards_set_
+  def deprecated_start_time_set(self): return self.deprecated_start_time_set_
 
-  def set_num_shards_set(self, x):
-    self.has_num_shards_set_ = 1
-    self.num_shards_set_ = x
+  def set_deprecated_start_time_set(self, x):
+    self.has_deprecated_start_time_set_ = 1
+    self.deprecated_start_time_set_ = x
 
-  def clear_num_shards_set(self):
-    if self.has_num_shards_set_:
-      self.has_num_shards_set_ = 0
-      self.num_shards_set_ = 0
+  def clear_deprecated_start_time_set(self):
+    if self.has_deprecated_start_time_set_:
+      self.has_deprecated_start_time_set_ = 0
+      self.deprecated_start_time_set_ = 0
 
-  def has_num_shards_set(self): return self.has_num_shards_set_
+  def has_deprecated_start_time_set(self): return self.has_deprecated_start_time_set_
+
+  def deprecated_end_time_set(self): return self.deprecated_end_time_set_
+
+  def set_deprecated_end_time_set(self, x):
+    self.has_deprecated_end_time_set_ = 1
+    self.deprecated_end_time_set_ = x
+
+  def clear_deprecated_end_time_set(self):
+    if self.has_deprecated_end_time_set_:
+      self.has_deprecated_end_time_set_ = 0
+      self.deprecated_end_time_set_ = 0
+
+  def has_deprecated_end_time_set(self): return self.has_deprecated_end_time_set_
+
+  def deprecated_minimum_log_level_set(self): return self.deprecated_minimum_log_level_set_
+
+  def set_deprecated_minimum_log_level_set(self, x):
+    self.has_deprecated_minimum_log_level_set_ = 1
+    self.deprecated_minimum_log_level_set_ = x
+
+  def clear_deprecated_minimum_log_level_set(self):
+    if self.has_deprecated_minimum_log_level_set_:
+      self.has_deprecated_minimum_log_level_set_ = 0
+      self.deprecated_minimum_log_level_set_ = 0
+
+  def has_deprecated_minimum_log_level_set(self): return self.has_deprecated_minimum_log_level_set_
+
+  def deprecated_count_set(self): return self.deprecated_count_set_
+
+  def set_deprecated_count_set(self, x):
+    self.has_deprecated_count_set_ = 1
+    self.deprecated_count_set_ = x
+
+  def clear_deprecated_count_set(self):
+    if self.has_deprecated_count_set_:
+      self.has_deprecated_count_set_ = 0
+      self.deprecated_count_set_ = 0
+
+  def has_deprecated_count_set(self): return self.has_deprecated_count_set_
+
+  def deprecated_combined_log_regex_set(self): return self.deprecated_combined_log_regex_set_
+
+  def set_deprecated_combined_log_regex_set(self, x):
+    self.has_deprecated_combined_log_regex_set_ = 1
+    self.deprecated_combined_log_regex_set_ = x
+
+  def clear_deprecated_combined_log_regex_set(self):
+    if self.has_deprecated_combined_log_regex_set_:
+      self.has_deprecated_combined_log_regex_set_ = 0
+      self.deprecated_combined_log_regex_set_ = 0
+
+  def has_deprecated_combined_log_regex_set(self): return self.has_deprecated_combined_log_regex_set_
+
+  def deprecated_host_regex_set(self): return self.deprecated_host_regex_set_
+
+  def set_deprecated_host_regex_set(self, x):
+    self.has_deprecated_host_regex_set_ = 1
+    self.deprecated_host_regex_set_ = x
+
+  def clear_deprecated_host_regex_set(self):
+    if self.has_deprecated_host_regex_set_:
+      self.has_deprecated_host_regex_set_ = 0
+      self.deprecated_host_regex_set_ = 0
+
+  def has_deprecated_host_regex_set(self): return self.has_deprecated_host_regex_set_
+
+  def deprecated_replica_index_set(self): return self.deprecated_replica_index_set_
+
+  def set_deprecated_replica_index_set(self, x):
+    self.has_deprecated_replica_index_set_ = 1
+    self.deprecated_replica_index_set_ = x
+
+  def clear_deprecated_replica_index_set(self):
+    if self.has_deprecated_replica_index_set_:
+      self.has_deprecated_replica_index_set_ = 0
+      self.deprecated_replica_index_set_ = 0
+
+  def has_deprecated_replica_index_set(self): return self.has_deprecated_replica_index_set_
+
+  def deprecated_app_logs_per_request_set(self): return self.deprecated_app_logs_per_request_set_
+
+  def set_deprecated_app_logs_per_request_set(self, x):
+    self.has_deprecated_app_logs_per_request_set_ = 1
+    self.deprecated_app_logs_per_request_set_ = x
+
+  def clear_deprecated_app_logs_per_request_set(self):
+    if self.has_deprecated_app_logs_per_request_set_:
+      self.has_deprecated_app_logs_per_request_set_ = 0
+      self.deprecated_app_logs_per_request_set_ = 0
+
+  def has_deprecated_app_logs_per_request_set(self): return self.has_deprecated_app_logs_per_request_set_
+
+  def deprecated_num_shards_set(self): return self.deprecated_num_shards_set_
+
+  def set_deprecated_num_shards_set(self, x):
+    self.has_deprecated_num_shards_set_ = 1
+    self.deprecated_num_shards_set_ = x
+
+  def clear_deprecated_num_shards_set(self):
+    if self.has_deprecated_num_shards_set_:
+      self.has_deprecated_num_shards_set_ = 0
+      self.deprecated_num_shards_set_ = 0
+
+  def has_deprecated_num_shards_set(self): return self.has_deprecated_num_shards_set_
 
 
   def MergeFrom(self, x):
     assert x is not self
     if (x.has_app_id()): self.set_app_id(x.app_id())
-    for i in xrange(x.version_id_size()): self.add_version_id(x.version_id(i))
-    for i in xrange(x.module_version_size()): self.add_module_version().CopyFrom(x.module_version(i))
+    for i in range(x.version_id_size()): self.add_version_id(x.version_id(i))
+    for i in range(x.module_version_size()): self.add_module_version().CopyFrom(x.module_version(i))
     if (x.has_start_time()): self.set_start_time(x.start_time())
-    if (x.has_start_time_set()): self.set_start_time_set(x.start_time_set())
     if (x.has_end_time()): self.set_end_time(x.end_time())
-    if (x.has_end_time_set()): self.set_end_time_set(x.end_time_set())
     if (x.has_offset()): self.mutable_offset().MergeFrom(x.offset())
-    for i in xrange(x.request_id_size()): self.add_request_id(x.request_id(i))
+    for i in range(x.request_id_size()): self.add_request_id(x.request_id(i))
     if (x.has_minimum_log_level()): self.set_minimum_log_level(x.minimum_log_level())
-    if (x.has_minimum_log_level_set()): self.set_minimum_log_level_set(x.minimum_log_level_set())
     if (x.has_include_incomplete()): self.set_include_incomplete(x.include_incomplete())
     if (x.has_count()): self.set_count(x.count())
-    if (x.has_count_set()): self.set_count_set(x.count_set())
     if (x.has_combined_log_regex()): self.set_combined_log_regex(x.combined_log_regex())
-    if (x.has_combined_log_regex_set()): self.set_combined_log_regex_set(x.combined_log_regex_set())
     if (x.has_host_regex()): self.set_host_regex(x.host_regex())
-    if (x.has_host_regex_set()): self.set_host_regex_set(x.host_regex_set())
     if (x.has_replica_index()): self.set_replica_index(x.replica_index())
-    if (x.has_replica_index_set()): self.set_replica_index_set(x.replica_index_set())
     if (x.has_include_app_logs()): self.set_include_app_logs(x.include_app_logs())
     if (x.has_app_logs_per_request()): self.set_app_logs_per_request(x.app_logs_per_request())
-    if (x.has_app_logs_per_request_set()): self.set_app_logs_per_request_set(x.app_logs_per_request_set())
     if (x.has_include_host()): self.set_include_host(x.include_host())
     if (x.has_include_all()): self.set_include_all(x.include_all())
     if (x.has_cache_iterator()): self.set_cache_iterator(x.cache_iterator())
     if (x.has_num_shards()): self.set_num_shards(x.num_shards())
-    if (x.has_num_shards_set()): self.set_num_shards_set(x.num_shards_set())
+    if (x.has_deprecated_start_time_set()): self.set_deprecated_start_time_set(x.deprecated_start_time_set())
+    if (x.has_deprecated_end_time_set()): self.set_deprecated_end_time_set(x.deprecated_end_time_set())
+    if (x.has_deprecated_minimum_log_level_set()): self.set_deprecated_minimum_log_level_set(x.deprecated_minimum_log_level_set())
+    if (x.has_deprecated_count_set()): self.set_deprecated_count_set(x.deprecated_count_set())
+    if (x.has_deprecated_combined_log_regex_set()): self.set_deprecated_combined_log_regex_set(x.deprecated_combined_log_regex_set())
+    if (x.has_deprecated_host_regex_set()): self.set_deprecated_host_regex_set(x.deprecated_host_regex_set())
+    if (x.has_deprecated_replica_index_set()): self.set_deprecated_replica_index_set(x.deprecated_replica_index_set())
+    if (x.has_deprecated_app_logs_per_request_set()): self.set_deprecated_app_logs_per_request_set(x.deprecated_app_logs_per_request_set())
+    if (x.has_deprecated_num_shards_set()): self.set_deprecated_num_shards_set(x.deprecated_num_shards_set())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.LogReadRequest', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.LogReadRequest')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.LogReadRequest')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.LogReadRequest', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.LogReadRequest', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.LogReadRequest', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -3182,12 +3532,8 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       if e1 != e2: return 0
     if self.has_start_time_ != x.has_start_time_: return 0
     if self.has_start_time_ and self.start_time_ != x.start_time_: return 0
-    if self.has_start_time_set_ != x.has_start_time_set_: return 0
-    if self.has_start_time_set_ and self.start_time_set_ != x.start_time_set_: return 0
     if self.has_end_time_ != x.has_end_time_: return 0
     if self.has_end_time_ and self.end_time_ != x.end_time_: return 0
-    if self.has_end_time_set_ != x.has_end_time_set_: return 0
-    if self.has_end_time_set_ and self.end_time_set_ != x.end_time_set_: return 0
     if self.has_offset_ != x.has_offset_: return 0
     if self.has_offset_ and self.offset_ != x.offset_: return 0
     if len(self.request_id_) != len(x.request_id_): return 0
@@ -3195,32 +3541,20 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       if e1 != e2: return 0
     if self.has_minimum_log_level_ != x.has_minimum_log_level_: return 0
     if self.has_minimum_log_level_ and self.minimum_log_level_ != x.minimum_log_level_: return 0
-    if self.has_minimum_log_level_set_ != x.has_minimum_log_level_set_: return 0
-    if self.has_minimum_log_level_set_ and self.minimum_log_level_set_ != x.minimum_log_level_set_: return 0
     if self.has_include_incomplete_ != x.has_include_incomplete_: return 0
     if self.has_include_incomplete_ and self.include_incomplete_ != x.include_incomplete_: return 0
     if self.has_count_ != x.has_count_: return 0
     if self.has_count_ and self.count_ != x.count_: return 0
-    if self.has_count_set_ != x.has_count_set_: return 0
-    if self.has_count_set_ and self.count_set_ != x.count_set_: return 0
     if self.has_combined_log_regex_ != x.has_combined_log_regex_: return 0
     if self.has_combined_log_regex_ and self.combined_log_regex_ != x.combined_log_regex_: return 0
-    if self.has_combined_log_regex_set_ != x.has_combined_log_regex_set_: return 0
-    if self.has_combined_log_regex_set_ and self.combined_log_regex_set_ != x.combined_log_regex_set_: return 0
     if self.has_host_regex_ != x.has_host_regex_: return 0
     if self.has_host_regex_ and self.host_regex_ != x.host_regex_: return 0
-    if self.has_host_regex_set_ != x.has_host_regex_set_: return 0
-    if self.has_host_regex_set_ and self.host_regex_set_ != x.host_regex_set_: return 0
     if self.has_replica_index_ != x.has_replica_index_: return 0
     if self.has_replica_index_ and self.replica_index_ != x.replica_index_: return 0
-    if self.has_replica_index_set_ != x.has_replica_index_set_: return 0
-    if self.has_replica_index_set_ and self.replica_index_set_ != x.replica_index_set_: return 0
     if self.has_include_app_logs_ != x.has_include_app_logs_: return 0
     if self.has_include_app_logs_ and self.include_app_logs_ != x.include_app_logs_: return 0
     if self.has_app_logs_per_request_ != x.has_app_logs_per_request_: return 0
     if self.has_app_logs_per_request_ and self.app_logs_per_request_ != x.app_logs_per_request_: return 0
-    if self.has_app_logs_per_request_set_ != x.has_app_logs_per_request_set_: return 0
-    if self.has_app_logs_per_request_set_ and self.app_logs_per_request_set_ != x.app_logs_per_request_set_: return 0
     if self.has_include_host_ != x.has_include_host_: return 0
     if self.has_include_host_ and self.include_host_ != x.include_host_: return 0
     if self.has_include_all_ != x.has_include_all_: return 0
@@ -3229,8 +3563,24 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
     if self.has_cache_iterator_ and self.cache_iterator_ != x.cache_iterator_: return 0
     if self.has_num_shards_ != x.has_num_shards_: return 0
     if self.has_num_shards_ and self.num_shards_ != x.num_shards_: return 0
-    if self.has_num_shards_set_ != x.has_num_shards_set_: return 0
-    if self.has_num_shards_set_ and self.num_shards_set_ != x.num_shards_set_: return 0
+    if self.has_deprecated_start_time_set_ != x.has_deprecated_start_time_set_: return 0
+    if self.has_deprecated_start_time_set_ and self.deprecated_start_time_set_ != x.deprecated_start_time_set_: return 0
+    if self.has_deprecated_end_time_set_ != x.has_deprecated_end_time_set_: return 0
+    if self.has_deprecated_end_time_set_ and self.deprecated_end_time_set_ != x.deprecated_end_time_set_: return 0
+    if self.has_deprecated_minimum_log_level_set_ != x.has_deprecated_minimum_log_level_set_: return 0
+    if self.has_deprecated_minimum_log_level_set_ and self.deprecated_minimum_log_level_set_ != x.deprecated_minimum_log_level_set_: return 0
+    if self.has_deprecated_count_set_ != x.has_deprecated_count_set_: return 0
+    if self.has_deprecated_count_set_ and self.deprecated_count_set_ != x.deprecated_count_set_: return 0
+    if self.has_deprecated_combined_log_regex_set_ != x.has_deprecated_combined_log_regex_set_: return 0
+    if self.has_deprecated_combined_log_regex_set_ and self.deprecated_combined_log_regex_set_ != x.deprecated_combined_log_regex_set_: return 0
+    if self.has_deprecated_host_regex_set_ != x.has_deprecated_host_regex_set_: return 0
+    if self.has_deprecated_host_regex_set_ and self.deprecated_host_regex_set_ != x.deprecated_host_regex_set_: return 0
+    if self.has_deprecated_replica_index_set_ != x.has_deprecated_replica_index_set_: return 0
+    if self.has_deprecated_replica_index_set_ and self.deprecated_replica_index_set_ != x.deprecated_replica_index_set_: return 0
+    if self.has_deprecated_app_logs_per_request_set_ != x.has_deprecated_app_logs_per_request_set_: return 0
+    if self.has_deprecated_app_logs_per_request_set_ and self.deprecated_app_logs_per_request_set_ != x.deprecated_app_logs_per_request_set_: return 0
+    if self.has_deprecated_num_shards_set_ != x.has_deprecated_num_shards_set_: return 0
+    if self.has_deprecated_num_shards_set_ and self.deprecated_num_shards_set_ != x.deprecated_num_shards_set_: return 0
     return 1
 
   def IsInitialized(self, debug_strs=None):
@@ -3248,35 +3598,35 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
     n = 0
     n += self.lengthString(len(self.app_id_))
     n += 1 * len(self.version_id_)
-    for i in xrange(len(self.version_id_)): n += self.lengthString(len(self.version_id_[i]))
+    for i in range(len(self.version_id_)): n += self.lengthString(len(self.version_id_[i]))
     n += 2 * len(self.module_version_)
-    for i in xrange(len(self.module_version_)): n += self.lengthString(self.module_version_[i].ByteSize())
+    for i in range(len(self.module_version_)): n += self.lengthString(self.module_version_[i].ByteSize())
     if (self.has_start_time_): n += 1 + self.lengthVarInt64(self.start_time_)
-    if (self.has_start_time_set_): n += 3
     if (self.has_end_time_): n += 1 + self.lengthVarInt64(self.end_time_)
-    if (self.has_end_time_set_): n += 3
     if (self.has_offset_): n += 1 + self.lengthString(self.offset_.ByteSize())
     n += 1 * len(self.request_id_)
-    for i in xrange(len(self.request_id_)): n += self.lengthString(len(self.request_id_[i]))
+    for i in range(len(self.request_id_)): n += self.lengthString(len(self.request_id_[i]))
     if (self.has_minimum_log_level_): n += 1 + self.lengthVarInt64(self.minimum_log_level_)
-    if (self.has_minimum_log_level_set_): n += 3
     if (self.has_include_incomplete_): n += 2
     if (self.has_count_): n += 1 + self.lengthVarInt64(self.count_)
-    if (self.has_count_set_): n += 3
     if (self.has_combined_log_regex_): n += 1 + self.lengthString(len(self.combined_log_regex_))
-    if (self.has_combined_log_regex_set_): n += 3
     if (self.has_host_regex_): n += 1 + self.lengthString(len(self.host_regex_))
-    if (self.has_host_regex_set_): n += 3
     if (self.has_replica_index_): n += 2 + self.lengthVarInt64(self.replica_index_)
-    if (self.has_replica_index_set_): n += 3
     if (self.has_include_app_logs_): n += 2
     if (self.has_app_logs_per_request_): n += 2 + self.lengthVarInt64(self.app_logs_per_request_)
-    if (self.has_app_logs_per_request_set_): n += 3
     if (self.has_include_host_): n += 2
     if (self.has_include_all_): n += 2
     if (self.has_cache_iterator_): n += 2
     if (self.has_num_shards_): n += 2 + self.lengthVarInt64(self.num_shards_)
-    if (self.has_num_shards_set_): n += 3
+    if (self.has_deprecated_start_time_set_): n += 3
+    if (self.has_deprecated_end_time_set_): n += 3
+    if (self.has_deprecated_minimum_log_level_set_): n += 3
+    if (self.has_deprecated_count_set_): n += 3
+    if (self.has_deprecated_combined_log_regex_set_): n += 3
+    if (self.has_deprecated_host_regex_set_): n += 3
+    if (self.has_deprecated_replica_index_set_): n += 3
+    if (self.has_deprecated_app_logs_per_request_set_): n += 3
+    if (self.has_deprecated_num_shards_set_): n += 3
     return n + 1
 
   def ByteSizePartial(self):
@@ -3285,35 +3635,35 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       n += 1
       n += self.lengthString(len(self.app_id_))
     n += 1 * len(self.version_id_)
-    for i in xrange(len(self.version_id_)): n += self.lengthString(len(self.version_id_[i]))
+    for i in range(len(self.version_id_)): n += self.lengthString(len(self.version_id_[i]))
     n += 2 * len(self.module_version_)
-    for i in xrange(len(self.module_version_)): n += self.lengthString(self.module_version_[i].ByteSizePartial())
+    for i in range(len(self.module_version_)): n += self.lengthString(self.module_version_[i].ByteSizePartial())
     if (self.has_start_time_): n += 1 + self.lengthVarInt64(self.start_time_)
-    if (self.has_start_time_set_): n += 3
     if (self.has_end_time_): n += 1 + self.lengthVarInt64(self.end_time_)
-    if (self.has_end_time_set_): n += 3
     if (self.has_offset_): n += 1 + self.lengthString(self.offset_.ByteSizePartial())
     n += 1 * len(self.request_id_)
-    for i in xrange(len(self.request_id_)): n += self.lengthString(len(self.request_id_[i]))
+    for i in range(len(self.request_id_)): n += self.lengthString(len(self.request_id_[i]))
     if (self.has_minimum_log_level_): n += 1 + self.lengthVarInt64(self.minimum_log_level_)
-    if (self.has_minimum_log_level_set_): n += 3
     if (self.has_include_incomplete_): n += 2
     if (self.has_count_): n += 1 + self.lengthVarInt64(self.count_)
-    if (self.has_count_set_): n += 3
     if (self.has_combined_log_regex_): n += 1 + self.lengthString(len(self.combined_log_regex_))
-    if (self.has_combined_log_regex_set_): n += 3
     if (self.has_host_regex_): n += 1 + self.lengthString(len(self.host_regex_))
-    if (self.has_host_regex_set_): n += 3
     if (self.has_replica_index_): n += 2 + self.lengthVarInt64(self.replica_index_)
-    if (self.has_replica_index_set_): n += 3
     if (self.has_include_app_logs_): n += 2
     if (self.has_app_logs_per_request_): n += 2 + self.lengthVarInt64(self.app_logs_per_request_)
-    if (self.has_app_logs_per_request_set_): n += 3
     if (self.has_include_host_): n += 2
     if (self.has_include_all_): n += 2
     if (self.has_cache_iterator_): n += 2
     if (self.has_num_shards_): n += 2 + self.lengthVarInt64(self.num_shards_)
-    if (self.has_num_shards_set_): n += 3
+    if (self.has_deprecated_start_time_set_): n += 3
+    if (self.has_deprecated_end_time_set_): n += 3
+    if (self.has_deprecated_minimum_log_level_set_): n += 3
+    if (self.has_deprecated_count_set_): n += 3
+    if (self.has_deprecated_combined_log_regex_set_): n += 3
+    if (self.has_deprecated_host_regex_set_): n += 3
+    if (self.has_deprecated_replica_index_set_): n += 3
+    if (self.has_deprecated_app_logs_per_request_set_): n += 3
+    if (self.has_deprecated_num_shards_set_): n += 3
     return n
 
   def Clear(self):
@@ -3321,35 +3671,35 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
     self.clear_version_id()
     self.clear_module_version()
     self.clear_start_time()
-    self.clear_start_time_set()
     self.clear_end_time()
-    self.clear_end_time_set()
     self.clear_offset()
     self.clear_request_id()
     self.clear_minimum_log_level()
-    self.clear_minimum_log_level_set()
     self.clear_include_incomplete()
     self.clear_count()
-    self.clear_count_set()
     self.clear_combined_log_regex()
-    self.clear_combined_log_regex_set()
     self.clear_host_regex()
-    self.clear_host_regex_set()
     self.clear_replica_index()
-    self.clear_replica_index_set()
     self.clear_include_app_logs()
     self.clear_app_logs_per_request()
-    self.clear_app_logs_per_request_set()
     self.clear_include_host()
     self.clear_include_all()
     self.clear_cache_iterator()
     self.clear_num_shards()
-    self.clear_num_shards_set()
+    self.clear_deprecated_start_time_set()
+    self.clear_deprecated_end_time_set()
+    self.clear_deprecated_minimum_log_level_set()
+    self.clear_deprecated_count_set()
+    self.clear_deprecated_combined_log_regex_set()
+    self.clear_deprecated_host_regex_set()
+    self.clear_deprecated_replica_index_set()
+    self.clear_deprecated_app_logs_per_request_set()
+    self.clear_deprecated_num_shards_set()
 
   def OutputUnchecked(self, out):
     out.putVarInt32(10)
     out.putPrefixedString(self.app_id_)
-    for i in xrange(len(self.version_id_)):
+    for i in range(len(self.version_id_)):
       out.putVarInt32(18)
       out.putPrefixedString(self.version_id_[i])
     if (self.has_start_time_):
@@ -3362,7 +3712,7 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       out.putVarInt32(42)
       out.putVarInt32(self.offset_.ByteSize())
       self.offset_.OutputUnchecked(out)
-    for i in xrange(len(self.request_id_)):
+    for i in range(len(self.request_id_)):
       out.putVarInt32(50)
       out.putPrefixedString(self.request_id_[i])
     if (self.has_minimum_log_level_):
@@ -3401,43 +3751,43 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
     if (self.has_num_shards_):
       out.putVarInt32(144)
       out.putVarInt32(self.num_shards_)
-    for i in xrange(len(self.module_version_)):
+    for i in range(len(self.module_version_)):
       out.putVarInt32(154)
       out.putVarInt32(self.module_version_[i].ByteSize())
       self.module_version_[i].OutputUnchecked(out)
-    if (self.has_start_time_set_):
+    if (self.has_deprecated_start_time_set_):
       out.putVarInt32(824)
-      out.putBoolean(self.start_time_set_)
-    if (self.has_end_time_set_):
+      out.putBoolean(self.deprecated_start_time_set_)
+    if (self.has_deprecated_end_time_set_):
       out.putVarInt32(832)
-      out.putBoolean(self.end_time_set_)
-    if (self.has_minimum_log_level_set_):
+      out.putBoolean(self.deprecated_end_time_set_)
+    if (self.has_deprecated_minimum_log_level_set_):
       out.putVarInt32(856)
-      out.putBoolean(self.minimum_log_level_set_)
-    if (self.has_count_set_):
+      out.putBoolean(self.deprecated_minimum_log_level_set_)
+    if (self.has_deprecated_count_set_):
       out.putVarInt32(872)
-      out.putBoolean(self.count_set_)
-    if (self.has_combined_log_regex_set_):
+      out.putBoolean(self.deprecated_count_set_)
+    if (self.has_deprecated_combined_log_regex_set_):
       out.putVarInt32(912)
-      out.putBoolean(self.combined_log_regex_set_)
-    if (self.has_host_regex_set_):
+      out.putBoolean(self.deprecated_combined_log_regex_set_)
+    if (self.has_deprecated_host_regex_set_):
       out.putVarInt32(920)
-      out.putBoolean(self.host_regex_set_)
-    if (self.has_replica_index_set_):
+      out.putBoolean(self.deprecated_host_regex_set_)
+    if (self.has_deprecated_replica_index_set_):
       out.putVarInt32(928)
-      out.putBoolean(self.replica_index_set_)
-    if (self.has_app_logs_per_request_set_):
+      out.putBoolean(self.deprecated_replica_index_set_)
+    if (self.has_deprecated_app_logs_per_request_set_):
       out.putVarInt32(936)
-      out.putBoolean(self.app_logs_per_request_set_)
-    if (self.has_num_shards_set_):
+      out.putBoolean(self.deprecated_app_logs_per_request_set_)
+    if (self.has_deprecated_num_shards_set_):
       out.putVarInt32(944)
-      out.putBoolean(self.num_shards_set_)
+      out.putBoolean(self.deprecated_num_shards_set_)
 
   def OutputPartial(self, out):
     if (self.has_app_id_):
       out.putVarInt32(10)
       out.putPrefixedString(self.app_id_)
-    for i in xrange(len(self.version_id_)):
+    for i in range(len(self.version_id_)):
       out.putVarInt32(18)
       out.putPrefixedString(self.version_id_[i])
     if (self.has_start_time_):
@@ -3450,7 +3800,7 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       out.putVarInt32(42)
       out.putVarInt32(self.offset_.ByteSizePartial())
       self.offset_.OutputPartial(out)
-    for i in xrange(len(self.request_id_)):
+    for i in range(len(self.request_id_)):
       out.putVarInt32(50)
       out.putPrefixedString(self.request_id_[i])
     if (self.has_minimum_log_level_):
@@ -3489,37 +3839,37 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
     if (self.has_num_shards_):
       out.putVarInt32(144)
       out.putVarInt32(self.num_shards_)
-    for i in xrange(len(self.module_version_)):
+    for i in range(len(self.module_version_)):
       out.putVarInt32(154)
       out.putVarInt32(self.module_version_[i].ByteSizePartial())
       self.module_version_[i].OutputPartial(out)
-    if (self.has_start_time_set_):
+    if (self.has_deprecated_start_time_set_):
       out.putVarInt32(824)
-      out.putBoolean(self.start_time_set_)
-    if (self.has_end_time_set_):
+      out.putBoolean(self.deprecated_start_time_set_)
+    if (self.has_deprecated_end_time_set_):
       out.putVarInt32(832)
-      out.putBoolean(self.end_time_set_)
-    if (self.has_minimum_log_level_set_):
+      out.putBoolean(self.deprecated_end_time_set_)
+    if (self.has_deprecated_minimum_log_level_set_):
       out.putVarInt32(856)
-      out.putBoolean(self.minimum_log_level_set_)
-    if (self.has_count_set_):
+      out.putBoolean(self.deprecated_minimum_log_level_set_)
+    if (self.has_deprecated_count_set_):
       out.putVarInt32(872)
-      out.putBoolean(self.count_set_)
-    if (self.has_combined_log_regex_set_):
+      out.putBoolean(self.deprecated_count_set_)
+    if (self.has_deprecated_combined_log_regex_set_):
       out.putVarInt32(912)
-      out.putBoolean(self.combined_log_regex_set_)
-    if (self.has_host_regex_set_):
+      out.putBoolean(self.deprecated_combined_log_regex_set_)
+    if (self.has_deprecated_host_regex_set_):
       out.putVarInt32(920)
-      out.putBoolean(self.host_regex_set_)
-    if (self.has_replica_index_set_):
+      out.putBoolean(self.deprecated_host_regex_set_)
+    if (self.has_deprecated_replica_index_set_):
       out.putVarInt32(928)
-      out.putBoolean(self.replica_index_set_)
-    if (self.has_app_logs_per_request_set_):
+      out.putBoolean(self.deprecated_replica_index_set_)
+    if (self.has_deprecated_app_logs_per_request_set_):
       out.putVarInt32(936)
-      out.putBoolean(self.app_logs_per_request_set_)
-    if (self.has_num_shards_set_):
+      out.putBoolean(self.deprecated_app_logs_per_request_set_)
+    if (self.has_deprecated_num_shards_set_):
       out.putVarInt32(944)
-      out.putBoolean(self.num_shards_set_)
+      out.putBoolean(self.deprecated_num_shards_set_)
 
   def TryMerge(self, d):
     while d.avail() > 0:
@@ -3588,35 +3938,35 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
         self.add_module_version().TryMerge(tmp)
         continue
       if tt == 824:
-        self.set_start_time_set(d.getBoolean())
+        self.set_deprecated_start_time_set(d.getBoolean())
         continue
       if tt == 832:
-        self.set_end_time_set(d.getBoolean())
+        self.set_deprecated_end_time_set(d.getBoolean())
         continue
       if tt == 856:
-        self.set_minimum_log_level_set(d.getBoolean())
+        self.set_deprecated_minimum_log_level_set(d.getBoolean())
         continue
       if tt == 872:
-        self.set_count_set(d.getBoolean())
+        self.set_deprecated_count_set(d.getBoolean())
         continue
       if tt == 912:
-        self.set_combined_log_regex_set(d.getBoolean())
+        self.set_deprecated_combined_log_regex_set(d.getBoolean())
         continue
       if tt == 920:
-        self.set_host_regex_set(d.getBoolean())
+        self.set_deprecated_host_regex_set(d.getBoolean())
         continue
       if tt == 928:
-        self.set_replica_index_set(d.getBoolean())
+        self.set_deprecated_replica_index_set(d.getBoolean())
         continue
       if tt == 936:
-        self.set_app_logs_per_request_set(d.getBoolean())
+        self.set_deprecated_app_logs_per_request_set(d.getBoolean())
         continue
       if tt == 944:
-        self.set_num_shards_set(d.getBoolean())
+        self.set_deprecated_num_shards_set(d.getBoolean())
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -3638,9 +3988,7 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       res+=prefix+">\n"
       cnt+=1
     if self.has_start_time_: res+=prefix+("start_time: %s\n" % self.DebugFormatInt64(self.start_time_))
-    if self.has_start_time_set_: res+=prefix+("start_time_set: %s\n" % self.DebugFormatBool(self.start_time_set_))
     if self.has_end_time_: res+=prefix+("end_time: %s\n" % self.DebugFormatInt64(self.end_time_))
-    if self.has_end_time_set_: res+=prefix+("end_time_set: %s\n" % self.DebugFormatBool(self.end_time_set_))
     if self.has_offset_:
       res+=prefix+"offset <\n"
       res+=self.offset_.__str__(prefix + "  ", printElemNumber)
@@ -3652,58 +4000,60 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
       res+=prefix+("request_id%s: %s\n" % (elm, self.DebugFormatString(e)))
       cnt+=1
     if self.has_minimum_log_level_: res+=prefix+("minimum_log_level: %s\n" % self.DebugFormatInt32(self.minimum_log_level_))
-    if self.has_minimum_log_level_set_: res+=prefix+("minimum_log_level_set: %s\n" % self.DebugFormatBool(self.minimum_log_level_set_))
     if self.has_include_incomplete_: res+=prefix+("include_incomplete: %s\n" % self.DebugFormatBool(self.include_incomplete_))
     if self.has_count_: res+=prefix+("count: %s\n" % self.DebugFormatInt64(self.count_))
-    if self.has_count_set_: res+=prefix+("count_set: %s\n" % self.DebugFormatBool(self.count_set_))
     if self.has_combined_log_regex_: res+=prefix+("combined_log_regex: %s\n" % self.DebugFormatString(self.combined_log_regex_))
-    if self.has_combined_log_regex_set_: res+=prefix+("combined_log_regex_set: %s\n" % self.DebugFormatBool(self.combined_log_regex_set_))
     if self.has_host_regex_: res+=prefix+("host_regex: %s\n" % self.DebugFormatString(self.host_regex_))
-    if self.has_host_regex_set_: res+=prefix+("host_regex_set: %s\n" % self.DebugFormatBool(self.host_regex_set_))
     if self.has_replica_index_: res+=prefix+("replica_index: %s\n" % self.DebugFormatInt32(self.replica_index_))
-    if self.has_replica_index_set_: res+=prefix+("replica_index_set: %s\n" % self.DebugFormatBool(self.replica_index_set_))
     if self.has_include_app_logs_: res+=prefix+("include_app_logs: %s\n" % self.DebugFormatBool(self.include_app_logs_))
     if self.has_app_logs_per_request_: res+=prefix+("app_logs_per_request: %s\n" % self.DebugFormatInt32(self.app_logs_per_request_))
-    if self.has_app_logs_per_request_set_: res+=prefix+("app_logs_per_request_set: %s\n" % self.DebugFormatBool(self.app_logs_per_request_set_))
     if self.has_include_host_: res+=prefix+("include_host: %s\n" % self.DebugFormatBool(self.include_host_))
     if self.has_include_all_: res+=prefix+("include_all: %s\n" % self.DebugFormatBool(self.include_all_))
     if self.has_cache_iterator_: res+=prefix+("cache_iterator: %s\n" % self.DebugFormatBool(self.cache_iterator_))
     if self.has_num_shards_: res+=prefix+("num_shards: %s\n" % self.DebugFormatInt32(self.num_shards_))
-    if self.has_num_shards_set_: res+=prefix+("num_shards_set: %s\n" % self.DebugFormatBool(self.num_shards_set_))
+    if self.has_deprecated_start_time_set_: res+=prefix+("deprecated_start_time_set: %s\n" % self.DebugFormatBool(self.deprecated_start_time_set_))
+    if self.has_deprecated_end_time_set_: res+=prefix+("deprecated_end_time_set: %s\n" % self.DebugFormatBool(self.deprecated_end_time_set_))
+    if self.has_deprecated_minimum_log_level_set_: res+=prefix+("deprecated_minimum_log_level_set: %s\n" % self.DebugFormatBool(self.deprecated_minimum_log_level_set_))
+    if self.has_deprecated_count_set_: res+=prefix+("deprecated_count_set: %s\n" % self.DebugFormatBool(self.deprecated_count_set_))
+    if self.has_deprecated_combined_log_regex_set_: res+=prefix+("deprecated_combined_log_regex_set: %s\n" % self.DebugFormatBool(self.deprecated_combined_log_regex_set_))
+    if self.has_deprecated_host_regex_set_: res+=prefix+("deprecated_host_regex_set: %s\n" % self.DebugFormatBool(self.deprecated_host_regex_set_))
+    if self.has_deprecated_replica_index_set_: res+=prefix+("deprecated_replica_index_set: %s\n" % self.DebugFormatBool(self.deprecated_replica_index_set_))
+    if self.has_deprecated_app_logs_per_request_set_: res+=prefix+("deprecated_app_logs_per_request_set: %s\n" % self.DebugFormatBool(self.deprecated_app_logs_per_request_set_))
+    if self.has_deprecated_num_shards_set_: res+=prefix+("deprecated_num_shards_set: %s\n" % self.DebugFormatBool(self.deprecated_num_shards_set_))
     return res
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kapp_id = 1
   kversion_id = 2
   kmodule_version = 19
   kstart_time = 3
-  kstart_time_set = 103
   kend_time = 4
-  kend_time_set = 104
   koffset = 5
   krequest_id = 6
   kminimum_log_level = 7
-  kminimum_log_level_set = 107
   kinclude_incomplete = 8
   kcount = 9
-  kcount_set = 109
   kcombined_log_regex = 14
-  kcombined_log_regex_set = 114
   khost_regex = 15
-  khost_regex_set = 115
   kreplica_index = 16
-  kreplica_index_set = 116
   kinclude_app_logs = 10
   kapp_logs_per_request = 17
-  kapp_logs_per_request_set = 117
   kinclude_host = 11
   kinclude_all = 12
   kcache_iterator = 13
   knum_shards = 18
-  knum_shards_set = 118
+  kdeprecated_start_time_set = 103
+  kdeprecated_end_time_set = 104
+  kdeprecated_minimum_log_level_set = 107
+  kdeprecated_count_set = 109
+  kdeprecated_combined_log_regex_set = 114
+  kdeprecated_host_regex_set = 115
+  kdeprecated_replica_index_set = 116
+  kdeprecated_app_logs_per_request_set = 117
+  kdeprecated_num_shards_set = 118
 
   _TEXT = _BuildTagLookupTable({
     0: "ErrorCode",
@@ -3726,15 +4076,15 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
     17: "app_logs_per_request",
     18: "num_shards",
     19: "module_version",
-    103: "start_time_set",
-    104: "end_time_set",
-    107: "minimum_log_level_set",
-    109: "count_set",
-    114: "combined_log_regex_set",
-    115: "host_regex_set",
-    116: "replica_index_set",
-    117: "app_logs_per_request_set",
-    118: "num_shards_set",
+    103: "deprecated_start_time_set",
+    104: "deprecated_end_time_set",
+    107: "deprecated_minimum_log_level_set",
+    109: "deprecated_count_set",
+    114: "deprecated_combined_log_regex_set",
+    115: "deprecated_host_regex_set",
+    116: "deprecated_replica_index_set",
+    117: "deprecated_app_logs_per_request_set",
+    118: "deprecated_num_shards_set",
   }, 118)
 
   _TYPES = _BuildTagLookupTable({
@@ -3773,6 +4123,12 @@ class LogReadRequest(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.LogReadRequest'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChlhcHBob3N0aW5nLkxvZ1JlYWRSZXF1ZXN0ExoGYXBwX2lkIAEoAjAJOAIUExoKdmVyc2lvbl9pZCACKAIwCTgDFBMaDm1vZHVsZV92ZXJzaW9uIBMoAjALOANKG2FwcGhvc3RpbmcuTG9nTW9kdWxlVmVyc2lvbqMBqgEFY3R5cGWyAQZwcm90bzKkARQTGgpzdGFydF90aW1lIAMoADADOAEUExoIZW5kX3RpbWUgBCgAMAM4ARQTGgZvZmZzZXQgBSgCMAs4AUoUYXBwaG9zdGluZy5Mb2dPZmZzZXSjAaoBBWN0eXBlsgEGcHJvdG8ypAEUExoKcmVxdWVzdF9pZCAGKAIwCTgDFBMaEW1pbmltdW1fbG9nX2xldmVsIAcoADAFOAEUExoSaW5jbHVkZV9pbmNvbXBsZXRlIAgoADAIOAEUExoFY291bnQgCSgAMAM4ARQTGhJjb21iaW5lZF9sb2dfcmVnZXggDigCMAk4ARQTGgpob3N0X3JlZ2V4IA8oAjAJOAEUExoNcmVwbGljYV9pbmRleCAQKAAwBTgBFBMaEGluY2x1ZGVfYXBwX2xvZ3MgCigAMAg4ARQTGhRhcHBfbG9nc19wZXJfcmVxdWVzdCARKAAwBTgBFBMaDGluY2x1ZGVfaG9zdCALKAAwCDgBFBMaC2luY2x1ZGVfYWxsIAwoADAIOAEUExoOY2FjaGVfaXRlcmF0b3IgDSgAMAg4ARQTGgpudW1fc2hhcmRzIBIoADAFOAEUExoZZGVwcmVjYXRlZF9zdGFydF90aW1lX3NldCBnKAAwCDgBFBMaF2RlcHJlY2F0ZWRfZW5kX3RpbWVfc2V0IGgoADAIOAEUExogZGVwcmVjYXRlZF9taW5pbXVtX2xvZ19sZXZlbF9zZXQgaygAMAg4ARQTGhRkZXByZWNhdGVkX2NvdW50X3NldCBtKAAwCDgBFBMaIWRlcHJlY2F0ZWRfY29tYmluZWRfbG9nX3JlZ2V4X3NldCByKAAwCDgBFBMaGWRlcHJlY2F0ZWRfaG9zdF9yZWdleF9zZXQgcygAMAg4ARQTGhxkZXByZWNhdGVkX3JlcGxpY2FfaW5kZXhfc2V0IHQoADAIOAEUExojZGVwcmVjYXRlZF9hcHBfbG9nc19wZXJfcmVxdWVzdF9zZXQgdSgAMAg4ARQTGhlkZXByZWNhdGVkX251bV9zaGFyZHNfc2V0IHYoADAIOAEUwgEaYXBwaG9zdGluZy5Mb2dTZXJ2aWNlRXJyb3I="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class LogReadResponse(ProtocolBuffer.ProtocolMessage):
   has_offset_ = 0
   offset_ = None
@@ -3781,7 +4137,7 @@ class LogReadResponse(ProtocolBuffer.ProtocolMessage):
 
   def __init__(self, contents=None):
     self.log_ = []
-    self.lazy_init_lock_ = thread.allocate_lock()
+    self.lazy_init_lock_ = _Lock()
     if contents is not None: self.MergeFromString(contents)
 
   def log_size(self): return len(self.log_)
@@ -3835,9 +4191,36 @@ class LogReadResponse(ProtocolBuffer.ProtocolMessage):
 
   def MergeFrom(self, x):
     assert x is not self
-    for i in xrange(x.log_size()): self.add_log().CopyFrom(x.log(i))
+    for i in range(x.log_size()): self.add_log().CopyFrom(x.log(i))
     if (x.has_offset()): self.mutable_offset().MergeFrom(x.offset())
     if (x.has_last_end_time()): self.set_last_end_time(x.last_end_time())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.LogReadResponse', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.LogReadResponse')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.LogReadResponse')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.LogReadResponse', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.LogReadResponse', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.LogReadResponse', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -3860,7 +4243,7 @@ class LogReadResponse(ProtocolBuffer.ProtocolMessage):
   def ByteSize(self):
     n = 0
     n += 1 * len(self.log_)
-    for i in xrange(len(self.log_)): n += self.lengthString(self.log_[i].ByteSize())
+    for i in range(len(self.log_)): n += self.lengthString(self.log_[i].ByteSize())
     if (self.has_offset_): n += 1 + self.lengthString(self.offset_.ByteSize())
     if (self.has_last_end_time_): n += 1 + self.lengthVarInt64(self.last_end_time_)
     return n
@@ -3868,7 +4251,7 @@ class LogReadResponse(ProtocolBuffer.ProtocolMessage):
   def ByteSizePartial(self):
     n = 0
     n += 1 * len(self.log_)
-    for i in xrange(len(self.log_)): n += self.lengthString(self.log_[i].ByteSizePartial())
+    for i in range(len(self.log_)): n += self.lengthString(self.log_[i].ByteSizePartial())
     if (self.has_offset_): n += 1 + self.lengthString(self.offset_.ByteSizePartial())
     if (self.has_last_end_time_): n += 1 + self.lengthVarInt64(self.last_end_time_)
     return n
@@ -3879,7 +4262,7 @@ class LogReadResponse(ProtocolBuffer.ProtocolMessage):
     self.clear_last_end_time()
 
   def OutputUnchecked(self, out):
-    for i in xrange(len(self.log_)):
+    for i in range(len(self.log_)):
       out.putVarInt32(10)
       out.putVarInt32(self.log_[i].ByteSize())
       self.log_[i].OutputUnchecked(out)
@@ -3892,7 +4275,7 @@ class LogReadResponse(ProtocolBuffer.ProtocolMessage):
       out.putVarInt64(self.last_end_time_)
 
   def OutputPartial(self, out):
-    for i in xrange(len(self.log_)):
+    for i in range(len(self.log_)):
       out.putVarInt32(10)
       out.putVarInt32(self.log_[i].ByteSizePartial())
       self.log_[i].OutputPartial(out)
@@ -3924,7 +4307,7 @@ class LogReadResponse(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -3947,7 +4330,7 @@ class LogReadResponse(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   klog = 1
   koffset = 2
@@ -3971,6 +4354,12 @@ class LogReadResponse(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.LogReadResponse'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChphcHBob3N0aW5nLkxvZ1JlYWRSZXNwb25zZRMaA2xvZyABKAIwCzgDShVhcHBob3N0aW5nLlJlcXVlc3RMb2ejAaoBBWN0eXBlsgEGcHJvdG8ypAEUExoGb2Zmc2V0IAIoAjALOAFKFGFwcGhvc3RpbmcuTG9nT2Zmc2V0owGqAQVjdHlwZbIBBnByb3RvMqQBFBMaDWxhc3RfZW5kX3RpbWUgAygAMAM4ARTCARphcHBob3N0aW5nLkxvZ1NlcnZpY2VFcnJvcg=="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class LogUsageRecord(ProtocolBuffer.ProtocolMessage):
   has_version_id_ = 0
   version_id_ = ""
@@ -4075,6 +4464,33 @@ class LogUsageRecord(ProtocolBuffer.ProtocolMessage):
     if (x.has_count()): self.set_count(x.count())
     if (x.has_total_size()): self.set_total_size(x.total_size())
     if (x.has_records()): self.set_records(x.records())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.LogUsageRecord', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.LogUsageRecord')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.LogUsageRecord')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.LogUsageRecord', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.LogUsageRecord', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.LogUsageRecord', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -4187,7 +4603,7 @@ class LogUsageRecord(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -4203,7 +4619,7 @@ class LogUsageRecord(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kversion_id = 1
   kstart_time = 2
@@ -4236,6 +4652,12 @@ class LogUsageRecord(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.LogUsageRecord'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChlhcHBob3N0aW5nLkxvZ1VzYWdlUmVjb3JkExoKdmVyc2lvbl9pZCABKAIwCTgBFBMaCnN0YXJ0X3RpbWUgAigAMAU4ARQTGghlbmRfdGltZSADKAAwBTgBFBMaBWNvdW50IAQoADADOAEUExoKdG90YWxfc2l6ZSAFKAAwAzgBFBMaB3JlY29yZHMgBigAMAU4ARTCARphcHBob3N0aW5nLkxvZ1NlcnZpY2VFcnJvcg=="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
   has_app_id_ = 0
   app_id_ = ""
@@ -4245,16 +4667,16 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
   end_time_ = 0
   has_resolution_hours_ = 0
   resolution_hours_ = 1
-  has_resolution_hours_set_ = 0
-  resolution_hours_set_ = 0
   has_combine_versions_ = 0
   combine_versions_ = 0
   has_usage_version_ = 0
   usage_version_ = 0
-  has_usage_version_set_ = 0
-  usage_version_set_ = 0
   has_versions_only_ = 0
   versions_only_ = 0
+  has_deprecated_resolution_hours_set_ = 0
+  deprecated_resolution_hours_set_ = 0
+  has_deprecated_usage_version_set_ = 0
+  deprecated_usage_version_set_ = 0
 
   def __init__(self, contents=None):
     self.version_id_ = []
@@ -4327,19 +4749,6 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
 
   def has_resolution_hours(self): return self.has_resolution_hours_
 
-  def resolution_hours_set(self): return self.resolution_hours_set_
-
-  def set_resolution_hours_set(self, x):
-    self.has_resolution_hours_set_ = 1
-    self.resolution_hours_set_ = x
-
-  def clear_resolution_hours_set(self):
-    if self.has_resolution_hours_set_:
-      self.has_resolution_hours_set_ = 0
-      self.resolution_hours_set_ = 0
-
-  def has_resolution_hours_set(self): return self.has_resolution_hours_set_
-
   def combine_versions(self): return self.combine_versions_
 
   def set_combine_versions(self, x):
@@ -4366,19 +4775,6 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
 
   def has_usage_version(self): return self.has_usage_version_
 
-  def usage_version_set(self): return self.usage_version_set_
-
-  def set_usage_version_set(self, x):
-    self.has_usage_version_set_ = 1
-    self.usage_version_set_ = x
-
-  def clear_usage_version_set(self):
-    if self.has_usage_version_set_:
-      self.has_usage_version_set_ = 0
-      self.usage_version_set_ = 0
-
-  def has_usage_version_set(self): return self.has_usage_version_set_
-
   def versions_only(self): return self.versions_only_
 
   def set_versions_only(self, x):
@@ -4392,19 +4788,72 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
 
   def has_versions_only(self): return self.has_versions_only_
 
+  def deprecated_resolution_hours_set(self): return self.deprecated_resolution_hours_set_
+
+  def set_deprecated_resolution_hours_set(self, x):
+    self.has_deprecated_resolution_hours_set_ = 1
+    self.deprecated_resolution_hours_set_ = x
+
+  def clear_deprecated_resolution_hours_set(self):
+    if self.has_deprecated_resolution_hours_set_:
+      self.has_deprecated_resolution_hours_set_ = 0
+      self.deprecated_resolution_hours_set_ = 0
+
+  def has_deprecated_resolution_hours_set(self): return self.has_deprecated_resolution_hours_set_
+
+  def deprecated_usage_version_set(self): return self.deprecated_usage_version_set_
+
+  def set_deprecated_usage_version_set(self, x):
+    self.has_deprecated_usage_version_set_ = 1
+    self.deprecated_usage_version_set_ = x
+
+  def clear_deprecated_usage_version_set(self):
+    if self.has_deprecated_usage_version_set_:
+      self.has_deprecated_usage_version_set_ = 0
+      self.deprecated_usage_version_set_ = 0
+
+  def has_deprecated_usage_version_set(self): return self.has_deprecated_usage_version_set_
+
 
   def MergeFrom(self, x):
     assert x is not self
     if (x.has_app_id()): self.set_app_id(x.app_id())
-    for i in xrange(x.version_id_size()): self.add_version_id(x.version_id(i))
+    for i in range(x.version_id_size()): self.add_version_id(x.version_id(i))
     if (x.has_start_time()): self.set_start_time(x.start_time())
     if (x.has_end_time()): self.set_end_time(x.end_time())
     if (x.has_resolution_hours()): self.set_resolution_hours(x.resolution_hours())
-    if (x.has_resolution_hours_set()): self.set_resolution_hours_set(x.resolution_hours_set())
     if (x.has_combine_versions()): self.set_combine_versions(x.combine_versions())
     if (x.has_usage_version()): self.set_usage_version(x.usage_version())
-    if (x.has_usage_version_set()): self.set_usage_version_set(x.usage_version_set())
     if (x.has_versions_only()): self.set_versions_only(x.versions_only())
+    if (x.has_deprecated_resolution_hours_set()): self.set_deprecated_resolution_hours_set(x.deprecated_resolution_hours_set())
+    if (x.has_deprecated_usage_version_set()): self.set_deprecated_usage_version_set(x.deprecated_usage_version_set())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.LogUsageRequest', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.LogUsageRequest')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.LogUsageRequest')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.LogUsageRequest', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.LogUsageRequest', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.LogUsageRequest', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -4419,16 +4868,16 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
     if self.has_end_time_ and self.end_time_ != x.end_time_: return 0
     if self.has_resolution_hours_ != x.has_resolution_hours_: return 0
     if self.has_resolution_hours_ and self.resolution_hours_ != x.resolution_hours_: return 0
-    if self.has_resolution_hours_set_ != x.has_resolution_hours_set_: return 0
-    if self.has_resolution_hours_set_ and self.resolution_hours_set_ != x.resolution_hours_set_: return 0
     if self.has_combine_versions_ != x.has_combine_versions_: return 0
     if self.has_combine_versions_ and self.combine_versions_ != x.combine_versions_: return 0
     if self.has_usage_version_ != x.has_usage_version_: return 0
     if self.has_usage_version_ and self.usage_version_ != x.usage_version_: return 0
-    if self.has_usage_version_set_ != x.has_usage_version_set_: return 0
-    if self.has_usage_version_set_ and self.usage_version_set_ != x.usage_version_set_: return 0
     if self.has_versions_only_ != x.has_versions_only_: return 0
     if self.has_versions_only_ and self.versions_only_ != x.versions_only_: return 0
+    if self.has_deprecated_resolution_hours_set_ != x.has_deprecated_resolution_hours_set_: return 0
+    if self.has_deprecated_resolution_hours_set_ and self.deprecated_resolution_hours_set_ != x.deprecated_resolution_hours_set_: return 0
+    if self.has_deprecated_usage_version_set_ != x.has_deprecated_usage_version_set_: return 0
+    if self.has_deprecated_usage_version_set_ and self.deprecated_usage_version_set_ != x.deprecated_usage_version_set_: return 0
     return 1
 
   def IsInitialized(self, debug_strs=None):
@@ -4443,15 +4892,15 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
     n = 0
     n += self.lengthString(len(self.app_id_))
     n += 1 * len(self.version_id_)
-    for i in xrange(len(self.version_id_)): n += self.lengthString(len(self.version_id_[i]))
+    for i in range(len(self.version_id_)): n += self.lengthString(len(self.version_id_[i]))
     if (self.has_start_time_): n += 1 + self.lengthVarInt64(self.start_time_)
     if (self.has_end_time_): n += 1 + self.lengthVarInt64(self.end_time_)
     if (self.has_resolution_hours_): n += 1 + self.lengthVarInt64(self.resolution_hours_)
-    if (self.has_resolution_hours_set_): n += 3
     if (self.has_combine_versions_): n += 2
     if (self.has_usage_version_): n += 1 + self.lengthVarInt64(self.usage_version_)
-    if (self.has_usage_version_set_): n += 3
     if (self.has_versions_only_): n += 2
+    if (self.has_deprecated_resolution_hours_set_): n += 3
+    if (self.has_deprecated_usage_version_set_): n += 3
     return n + 1
 
   def ByteSizePartial(self):
@@ -4460,15 +4909,15 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
       n += 1
       n += self.lengthString(len(self.app_id_))
     n += 1 * len(self.version_id_)
-    for i in xrange(len(self.version_id_)): n += self.lengthString(len(self.version_id_[i]))
+    for i in range(len(self.version_id_)): n += self.lengthString(len(self.version_id_[i]))
     if (self.has_start_time_): n += 1 + self.lengthVarInt64(self.start_time_)
     if (self.has_end_time_): n += 1 + self.lengthVarInt64(self.end_time_)
     if (self.has_resolution_hours_): n += 1 + self.lengthVarInt64(self.resolution_hours_)
-    if (self.has_resolution_hours_set_): n += 3
     if (self.has_combine_versions_): n += 2
     if (self.has_usage_version_): n += 1 + self.lengthVarInt64(self.usage_version_)
-    if (self.has_usage_version_set_): n += 3
     if (self.has_versions_only_): n += 2
+    if (self.has_deprecated_resolution_hours_set_): n += 3
+    if (self.has_deprecated_usage_version_set_): n += 3
     return n
 
   def Clear(self):
@@ -4477,16 +4926,16 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
     self.clear_start_time()
     self.clear_end_time()
     self.clear_resolution_hours()
-    self.clear_resolution_hours_set()
     self.clear_combine_versions()
     self.clear_usage_version()
-    self.clear_usage_version_set()
     self.clear_versions_only()
+    self.clear_deprecated_resolution_hours_set()
+    self.clear_deprecated_usage_version_set()
 
   def OutputUnchecked(self, out):
     out.putVarInt32(10)
     out.putPrefixedString(self.app_id_)
-    for i in xrange(len(self.version_id_)):
+    for i in range(len(self.version_id_)):
       out.putVarInt32(18)
       out.putPrefixedString(self.version_id_[i])
     if (self.has_start_time_):
@@ -4507,18 +4956,18 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
     if (self.has_versions_only_):
       out.putVarInt32(64)
       out.putBoolean(self.versions_only_)
-    if (self.has_resolution_hours_set_):
+    if (self.has_deprecated_resolution_hours_set_):
       out.putVarInt32(840)
-      out.putBoolean(self.resolution_hours_set_)
-    if (self.has_usage_version_set_):
+      out.putBoolean(self.deprecated_resolution_hours_set_)
+    if (self.has_deprecated_usage_version_set_):
       out.putVarInt32(856)
-      out.putBoolean(self.usage_version_set_)
+      out.putBoolean(self.deprecated_usage_version_set_)
 
   def OutputPartial(self, out):
     if (self.has_app_id_):
       out.putVarInt32(10)
       out.putPrefixedString(self.app_id_)
-    for i in xrange(len(self.version_id_)):
+    for i in range(len(self.version_id_)):
       out.putVarInt32(18)
       out.putPrefixedString(self.version_id_[i])
     if (self.has_start_time_):
@@ -4539,12 +4988,12 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
     if (self.has_versions_only_):
       out.putVarInt32(64)
       out.putBoolean(self.versions_only_)
-    if (self.has_resolution_hours_set_):
+    if (self.has_deprecated_resolution_hours_set_):
       out.putVarInt32(840)
-      out.putBoolean(self.resolution_hours_set_)
-    if (self.has_usage_version_set_):
+      out.putBoolean(self.deprecated_resolution_hours_set_)
+    if (self.has_deprecated_usage_version_set_):
       out.putVarInt32(856)
-      out.putBoolean(self.usage_version_set_)
+      out.putBoolean(self.deprecated_usage_version_set_)
 
   def TryMerge(self, d):
     while d.avail() > 0:
@@ -4574,14 +5023,14 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
         self.set_versions_only(d.getBoolean())
         continue
       if tt == 840:
-        self.set_resolution_hours_set(d.getBoolean())
+        self.set_deprecated_resolution_hours_set(d.getBoolean())
         continue
       if tt == 856:
-        self.set_usage_version_set(d.getBoolean())
+        self.set_deprecated_usage_version_set(d.getBoolean())
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -4597,27 +5046,27 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
     if self.has_start_time_: res+=prefix+("start_time: %s\n" % self.DebugFormatInt32(self.start_time_))
     if self.has_end_time_: res+=prefix+("end_time: %s\n" % self.DebugFormatInt32(self.end_time_))
     if self.has_resolution_hours_: res+=prefix+("resolution_hours: %s\n" % self.DebugFormatInt64(self.resolution_hours_))
-    if self.has_resolution_hours_set_: res+=prefix+("resolution_hours_set: %s\n" % self.DebugFormatBool(self.resolution_hours_set_))
     if self.has_combine_versions_: res+=prefix+("combine_versions: %s\n" % self.DebugFormatBool(self.combine_versions_))
     if self.has_usage_version_: res+=prefix+("usage_version: %s\n" % self.DebugFormatInt32(self.usage_version_))
-    if self.has_usage_version_set_: res+=prefix+("usage_version_set: %s\n" % self.DebugFormatBool(self.usage_version_set_))
     if self.has_versions_only_: res+=prefix+("versions_only: %s\n" % self.DebugFormatBool(self.versions_only_))
+    if self.has_deprecated_resolution_hours_set_: res+=prefix+("deprecated_resolution_hours_set: %s\n" % self.DebugFormatBool(self.deprecated_resolution_hours_set_))
+    if self.has_deprecated_usage_version_set_: res+=prefix+("deprecated_usage_version_set: %s\n" % self.DebugFormatBool(self.deprecated_usage_version_set_))
     return res
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kapp_id = 1
   kversion_id = 2
   kstart_time = 3
   kend_time = 4
   kresolution_hours = 5
-  kresolution_hours_set = 105
   kcombine_versions = 6
   kusage_version = 7
-  kusage_version_set = 107
   kversions_only = 8
+  kdeprecated_resolution_hours_set = 105
+  kdeprecated_usage_version_set = 107
 
   _TEXT = _BuildTagLookupTable({
     0: "ErrorCode",
@@ -4629,8 +5078,8 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
     6: "combine_versions",
     7: "usage_version",
     8: "versions_only",
-    105: "resolution_hours_set",
-    107: "usage_version_set",
+    105: "deprecated_resolution_hours_set",
+    107: "deprecated_usage_version_set",
   }, 107)
 
   _TYPES = _BuildTagLookupTable({
@@ -4651,13 +5100,19 @@ class LogUsageRequest(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.LogUsageRequest'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChphcHBob3N0aW5nLkxvZ1VzYWdlUmVxdWVzdBMaBmFwcF9pZCABKAIwCTgCFBMaCnZlcnNpb25faWQgAigCMAk4AxQTGgpzdGFydF90aW1lIAMoADAFOAEUExoIZW5kX3RpbWUgBCgAMAU4ARQTGhByZXNvbHV0aW9uX2hvdXJzIAUoADAEOAFCATGjAaoBB2RlZmF1bHSyAQExpAEUExoQY29tYmluZV92ZXJzaW9ucyAGKAAwCDgBFBMaDXVzYWdlX3ZlcnNpb24gBygAMAU4ARQTGg12ZXJzaW9uc19vbmx5IAgoADAIOAEUExofZGVwcmVjYXRlZF9yZXNvbHV0aW9uX2hvdXJzX3NldCBpKAAwCDgBFBMaHGRlcHJlY2F0ZWRfdXNhZ2VfdmVyc2lvbl9zZXQgaygAMAg4ARTCARphcHBob3N0aW5nLkxvZ1NlcnZpY2VFcnJvcg=="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
 class LogUsageResponse(ProtocolBuffer.ProtocolMessage):
   has_summary_ = 0
   summary_ = None
 
   def __init__(self, contents=None):
     self.usage_ = []
-    self.lazy_init_lock_ = thread.allocate_lock()
+    self.lazy_init_lock_ = _Lock()
     if contents is not None: self.MergeFromString(contents)
 
   def usage_size(self): return len(self.usage_)
@@ -4698,8 +5153,35 @@ class LogUsageResponse(ProtocolBuffer.ProtocolMessage):
 
   def MergeFrom(self, x):
     assert x is not self
-    for i in xrange(x.usage_size()): self.add_usage().CopyFrom(x.usage(i))
+    for i in range(x.usage_size()): self.add_usage().CopyFrom(x.usage(i))
     if (x.has_summary()): self.mutable_summary().MergeFrom(x.summary())
+
+  if _net_proto___parse__python is not None:
+    def _CMergeFromString(self, s):
+      _net_proto___parse__python.MergeFromString(self, 'apphosting.LogUsageResponse', s)
+
+  if _net_proto___parse__python is not None:
+    def _CEncode(self):
+      return _net_proto___parse__python.Encode(self, 'apphosting.LogUsageResponse')
+
+  if _net_proto___parse__python is not None:
+    def _CEncodePartial(self):
+      return _net_proto___parse__python.EncodePartial(self, 'apphosting.LogUsageResponse')
+
+  if _net_proto___parse__python is not None:
+    def _CToASCII(self, output_format):
+      return _net_proto___parse__python.ToASCII(self, 'apphosting.LogUsageResponse', output_format)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCII(self, s):
+      _net_proto___parse__python.ParseASCII(self, 'apphosting.LogUsageResponse', s)
+
+
+  if _net_proto___parse__python is not None:
+    def ParseASCIIIgnoreUnknown(self, s):
+      _net_proto___parse__python.ParseASCIIIgnoreUnknown(self, 'apphosting.LogUsageResponse', s)
+
 
   def Equals(self, x):
     if x is self: return 1
@@ -4720,14 +5202,14 @@ class LogUsageResponse(ProtocolBuffer.ProtocolMessage):
   def ByteSize(self):
     n = 0
     n += 1 * len(self.usage_)
-    for i in xrange(len(self.usage_)): n += self.lengthString(self.usage_[i].ByteSize())
+    for i in range(len(self.usage_)): n += self.lengthString(self.usage_[i].ByteSize())
     if (self.has_summary_): n += 1 + self.lengthString(self.summary_.ByteSize())
     return n
 
   def ByteSizePartial(self):
     n = 0
     n += 1 * len(self.usage_)
-    for i in xrange(len(self.usage_)): n += self.lengthString(self.usage_[i].ByteSizePartial())
+    for i in range(len(self.usage_)): n += self.lengthString(self.usage_[i].ByteSizePartial())
     if (self.has_summary_): n += 1 + self.lengthString(self.summary_.ByteSizePartial())
     return n
 
@@ -4736,7 +5218,7 @@ class LogUsageResponse(ProtocolBuffer.ProtocolMessage):
     self.clear_summary()
 
   def OutputUnchecked(self, out):
-    for i in xrange(len(self.usage_)):
+    for i in range(len(self.usage_)):
       out.putVarInt32(10)
       out.putVarInt32(self.usage_[i].ByteSize())
       self.usage_[i].OutputUnchecked(out)
@@ -4746,7 +5228,7 @@ class LogUsageResponse(ProtocolBuffer.ProtocolMessage):
       self.summary_.OutputUnchecked(out)
 
   def OutputPartial(self, out):
-    for i in xrange(len(self.usage_)):
+    for i in range(len(self.usage_)):
       out.putVarInt32(10)
       out.putVarInt32(self.usage_[i].ByteSizePartial())
       self.usage_[i].OutputPartial(out)
@@ -4772,7 +5254,7 @@ class LogUsageResponse(ProtocolBuffer.ProtocolMessage):
         continue
 
 
-      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError
+      if (tt == 0): raise ProtocolBuffer.ProtocolBufferDecodeError()
       d.skipData(tt)
 
 
@@ -4794,7 +5276,7 @@ class LogUsageResponse(ProtocolBuffer.ProtocolMessage):
 
 
   def _BuildTagLookupTable(sparse, maxtag, default=None):
-    return tuple([sparse.get(i, default) for i in xrange(0, 1+maxtag)])
+    return tuple([sparse.get(i, default) for i in range(0, 1+maxtag)])
 
   kusage = 1
   ksummary = 2
@@ -4815,7 +5297,388 @@ class LogUsageResponse(ProtocolBuffer.ProtocolMessage):
   _STYLE = """"""
   _STYLE_CONTENT_TYPE = """"""
   _PROTO_DESCRIPTOR_NAME = 'apphosting.LogUsageResponse'
+  _SERIALIZED_DESCRIPTOR = array.array('B')
+  _SERIALIZED_DESCRIPTOR.fromstring(base64.decodestring("WithcHBob3N0aW5nL2FwaS9sb2dzZXJ2aWNlL2xvZ19zZXJ2aWNlLnByb3RvChthcHBob3N0aW5nLkxvZ1VzYWdlUmVzcG9uc2UTGgV1c2FnZSABKAIwCzgDShlhcHBob3N0aW5nLkxvZ1VzYWdlUmVjb3JkowGqAQVjdHlwZbIBBnByb3RvMqQBFBMaB3N1bW1hcnkgAigCMAs4AUoZYXBwaG9zdGluZy5Mb2dVc2FnZVJlY29yZKMBqgEFY3R5cGWyAQZwcm90bzKkARTCARphcHBob3N0aW5nLkxvZ1NlcnZpY2VFcnJvcg=="))
+  if _net_proto___parse__python is not None:
+    _net_proto___parse__python.RegisterType(
+        _SERIALIZED_DESCRIPTOR.tostring())
+
+
+
+class LogServiceStub(object):
+  """Makes Stubby RPC calls to a LogService server."""
+
+  __metaclass__ = abc.ABCMeta
+
+  __slots__ = ()
+
+  @abc.abstractmethod
+  def Flush(self, request, rpc=None, callback=None, response=None):
+    """Make a Flush RPC call.
+
+    Args:
+      request: a FlushRequest instance.
+      rpc: Optional RPC instance to use for the call.
+      callback: Optional final callback. Will be called as
+          callback(rpc, result) when the rpc completes. If None, the
+          call is synchronous.
+      response: Optional ProtocolMessage to be filled in with response.
+
+    Returns:
+      The google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto if callback is None. Otherwise, returns None.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def SetStatus(self, request, rpc=None, callback=None, response=None):
+    """Make a SetStatus RPC call.
+
+    Args:
+      request: a SetStatusRequest instance.
+      rpc: Optional RPC instance to use for the call.
+      callback: Optional final callback. Will be called as
+          callback(rpc, result) when the rpc completes. If None, the
+          call is synchronous.
+      response: Optional ProtocolMessage to be filled in with response.
+
+    Returns:
+      The google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto if callback is None. Otherwise, returns None.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def Read(self, request, rpc=None, callback=None, response=None):
+    """Make a Read RPC call.
+
+    Args:
+      request: a LogReadRequest instance.
+      rpc: Optional RPC instance to use for the call.
+      callback: Optional final callback. Will be called as
+          callback(rpc, result) when the rpc completes. If None, the
+          call is synchronous.
+      response: Optional ProtocolMessage to be filled in with response.
+
+    Returns:
+      The LogReadResponse if callback is None. Otherwise, returns None.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def Usage(self, request, rpc=None, callback=None, response=None):
+    """Make a Usage RPC call.
+
+    Args:
+      request: a LogUsageRequest instance.
+      rpc: Optional RPC instance to use for the call.
+      callback: Optional final callback. Will be called as
+          callback(rpc, result) when the rpc completes. If None, the
+          call is synchronous.
+      response: Optional ProtocolMessage to be filled in with response.
+
+    Returns:
+      The LogUsageResponse if callback is None. Otherwise, returns None.
+    """
+    raise NotImplementedError()
+
+
+class _LogService_ClientBaseStub(
+    LogServiceStub, _client_stub_base_class):
+  """Makes Stubby RPC calls to a LogService server."""
+
+  __slots__ = (
+      '_protorpc_Flush', '_full_name_Flush',
+      '_protorpc_SetStatus', '_full_name_SetStatus',
+      '_protorpc_Read', '_full_name_Read',
+      '_protorpc_Usage', '_full_name_Usage',
+  )
+
+  def __init__(self, rpc_stub, rpc_factory=None):
+    super(_LogService_ClientBaseStub, self).__init__(
+        None, inject_stub=rpc_stub, rpc_factory=rpc_factory)
+
+    self._protorpc_Flush = pywraprpc.RPC()
+    self._full_name_Flush = self._stub.GetFullMethodName(
+        'Flush')
+
+    self._protorpc_SetStatus = pywraprpc.RPC()
+    self._full_name_SetStatus = self._stub.GetFullMethodName(
+        'SetStatus')
+
+    self._protorpc_Read = pywraprpc.RPC()
+    self._full_name_Read = self._stub.GetFullMethodName(
+        'Read')
+
+    self._protorpc_Usage = pywraprpc.RPC()
+    self._full_name_Usage = self._stub.GetFullMethodName(
+        'Usage')
+
+  def Flush(self, request, rpc=None, callback=None, response=None):
+    """Make a Flush RPC call.
+
+    Args:
+      request: a FlushRequest instance.
+      rpc: Optional RPC instance to use for the call.
+      callback: Optional final callback. Will be called as
+          callback(rpc, result) when the rpc completes. If None, the
+          call is synchronous.
+      response: Optional ProtocolMessage to be filled in with response.
+
+    Returns:
+      The google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto if callback is None. Otherwise, returns None.
+    """
+
+    if response is None:
+      response = google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto
+    return self._MakeCall(rpc,
+                          self._full_name_Flush,
+                          'Flush',
+                          request,
+                          response,
+                          callback,
+                          self._protorpc_Flush,
+                          package_name='apphosting')
+
+  def SetStatus(self, request, rpc=None, callback=None, response=None):
+    """Make a SetStatus RPC call.
+
+    Args:
+      request: a SetStatusRequest instance.
+      rpc: Optional RPC instance to use for the call.
+      callback: Optional final callback. Will be called as
+          callback(rpc, result) when the rpc completes. If None, the
+          call is synchronous.
+      response: Optional ProtocolMessage to be filled in with response.
+
+    Returns:
+      The google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto if callback is None. Otherwise, returns None.
+    """
+
+    if response is None:
+      response = google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto
+    return self._MakeCall(rpc,
+                          self._full_name_SetStatus,
+                          'SetStatus',
+                          request,
+                          response,
+                          callback,
+                          self._protorpc_SetStatus,
+                          package_name='apphosting')
+
+  def Read(self, request, rpc=None, callback=None, response=None):
+    """Make a Read RPC call.
+
+    Args:
+      request: a LogReadRequest instance.
+      rpc: Optional RPC instance to use for the call.
+      callback: Optional final callback. Will be called as
+          callback(rpc, result) when the rpc completes. If None, the
+          call is synchronous.
+      response: Optional ProtocolMessage to be filled in with response.
+
+    Returns:
+      The LogReadResponse if callback is None. Otherwise, returns None.
+    """
+
+    if response is None:
+      response = LogReadResponse
+    return self._MakeCall(rpc,
+                          self._full_name_Read,
+                          'Read',
+                          request,
+                          response,
+                          callback,
+                          self._protorpc_Read,
+                          package_name='apphosting')
+
+  def Usage(self, request, rpc=None, callback=None, response=None):
+    """Make a Usage RPC call.
+
+    Args:
+      request: a LogUsageRequest instance.
+      rpc: Optional RPC instance to use for the call.
+      callback: Optional final callback. Will be called as
+          callback(rpc, result) when the rpc completes. If None, the
+          call is synchronous.
+      response: Optional ProtocolMessage to be filled in with response.
+
+    Returns:
+      The LogUsageResponse if callback is None. Otherwise, returns None.
+    """
+
+    if response is None:
+      response = LogUsageResponse
+    return self._MakeCall(rpc,
+                          self._full_name_Usage,
+                          'Usage',
+                          request,
+                          response,
+                          callback,
+                          self._protorpc_Usage,
+                          package_name='apphosting')
+
+
+class _LogService_ClientStub(_LogService_ClientBaseStub):
+  __slots__ = ('_params',)
+  def __init__(self, rpc_stub_parameters, service_name, rpc_factory=None):
+    if service_name is None:
+      service_name = 'LogService'
+    stub = pywraprpc.RPC_GenericStub(service_name, rpc_stub_parameters)
+    super(_LogService_ClientStub, self).__init__(stub, rpc_factory=rpc_factory)
+    self._params = rpc_stub_parameters
+
+
+class _LogService_RPC2ClientStub(_LogService_ClientBaseStub):
+  __slots__ = ()
+  def __init__(self, server, channel, service_name, rpc_factory=None):
+    if service_name is None:
+      service_name = 'LogService'
+    if channel is None:
+      if server is None:
+        raise RuntimeError('Invalid argument combination to create a stub')
+      channel = pywraprpc.NewClientChannel(server)
+    elif channel.version() == 1:
+      raise RuntimeError('Expecting an RPC2 channel to create the stub')
+    stub = pywraprpc.RPC_GenericStub(service_name, channel)
+    super(_LogService_RPC2ClientStub, self).__init__(stub, rpc_factory=rpc_factory)
+
+
+class LogService(_server_stub_base_class):
+  """Base class for LogService Stubby servers."""
+
+  @classmethod
+  def _MethodSignatures(cls):
+    """Returns a dict of {<method-name>: (<request-type>, <response-type>)}."""
+    return {
+      'Flush': (FlushRequest, google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto),
+      'SetStatus': (SetStatusRequest, google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto),
+      'Read': (LogReadRequest, LogReadResponse),
+      'Usage': (LogUsageRequest, LogUsageResponse),
+      }
+
+  @classmethod
+  def _StreamMethodSignatures(cls):
+    """Returns a dict of {<method-name>: (<request-type>, <stream-type>, <response-type>)}."""
+    return {
+      }
+
+  def __init__(self, *args, **kwargs):
+    """Creates a Stubby RPC server.
+
+    The arguments to this constructor are the same as the arguments to
+    BaseRpcServer.__init__ in rpcserver.py *MINUS* export_name. This
+    constructor passes its own value for export_name to
+    BaseRpcServer.__init__, so callers of this constructor should only
+    pass to this constructor values corresponding to
+    BaseRpcServer.__init__'s remaining arguments.
+    """
+    if _server_stub_base_class is object:
+      raise NotImplementedError('Add //net/rpc/python:rpcserver as a '
+                                'dependency for Stubby server support.')
+    _server_stub_base_class.__init__(self, 'apphosting.LogService', *args, **kwargs)
+
+  @staticmethod
+  def NewStub(rpc_stub_parameters, service_name=None, rpc_factory=None):
+    """USE NewRPC2Stub INSTEAD."""
+    if _client_stub_base_class is object:
+      raise RuntimeError('Add //net/rpc/python as a dependency to use Stubby')
+    return _LogService_ClientStub(
+        rpc_stub_parameters, service_name, rpc_factory=rpc_factory)
+
+  @staticmethod
+  def NewRPC2Stub(
+      server=None, channel=None, service_name=None, rpc_factory=None):
+    """Creates a new LogService Stubby2 client stub.
+
+    Args:
+      server: host:port or bns address (favor passing a channel instead).
+      channel: directly use a channel to create a stub. Will ignore server
+          argument if this is specified.
+      service_name: the service name used by the Stubby server.
+      rpc_factory: the rpc factory to use if no rpc argument is specified.
+
+    Returns:
+     A LogServiceStub to be used to invoke RPCs.
+    """
+
+    if _client_stub_base_class is object:
+      raise RuntimeError('Add //net/rpc/python:proto_python_api_2_stub (or maybe //net/rpc/python:proto_python_api_1_stub, but eww and b/67959631) as a dependency to create Stubby stubs')
+    return _LogService_RPC2ClientStub(
+        server, channel, service_name, rpc_factory=rpc_factory)
+
+  def Flush(self, rpc, request, response):
+    """Handles a Flush RPC call. You should override this.
+
+    Args:
+      rpc: a Stubby RPC object
+      request: a FlushRequest that contains the client request
+      response: a google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto that should be modified to send the response
+    """
+    raise NotImplementedError()
+
+
+  def SetStatus(self, rpc, request, response):
+    """Handles a SetStatus RPC call. You should override this.
+
+    Args:
+      rpc: a Stubby RPC object
+      request: a SetStatusRequest that contains the client request
+      response: a google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto that should be modified to send the response
+    """
+    raise NotImplementedError()
+
+
+  def Read(self, rpc, request, response):
+    """Handles a Read RPC call. You should override this.
+
+    Args:
+      rpc: a Stubby RPC object
+      request: a LogReadRequest that contains the client request
+      response: a LogReadResponse that should be modified to send the response
+    """
+    raise NotImplementedError()
+
+
+  def Usage(self, rpc, request, response):
+    """Handles a Usage RPC call. You should override this.
+
+    Args:
+      rpc: a Stubby RPC object
+      request: a LogUsageRequest that contains the client request
+      response: a LogUsageResponse that should be modified to send the response
+    """
+    raise NotImplementedError()
+
+  def _AddMethodAttributes(self):
+    """Sets attributes on Python RPC handlers.
+
+    See BaseRpcServer in rpcserver.py for details.
+    """
+    rpcserver._GetHandlerDecorator(
+        getattr(self.Flush, '__func__'),
+        FlushRequest,
+        google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto,
+        None,
+        'INTEGRITY')
+    rpcserver._GetHandlerDecorator(
+        getattr(self.SetStatus, '__func__'),
+        SetStatusRequest,
+        google_dot_apphosting_dot_api_dot_api__base__pb.VoidProto,
+        None,
+        'INTEGRITY')
+    rpcserver._GetHandlerDecorator(
+        getattr(self.Read, '__func__'),
+        LogReadRequest,
+        LogReadResponse,
+        None,
+        'INTEGRITY')
+    rpcserver._GetHandlerDecorator(
+        getattr(self.Usage, '__func__'),
+        LogUsageRequest,
+        LogUsageResponse,
+        None,
+        'INTEGRITY')
+
 if _extension_runtime:
   pass
 
-__all__ = ['LogServiceError','UserAppLogLine','UserAppLogGroup','FlushRequest','SetStatusRequest','LogOffset','LogLine','RequestLog','LogModuleVersion','LogReadRequest','LogReadResponse','LogUsageRecord','LogUsageRequest','LogUsageResponse']
+__all__ = ['LogServiceError','UserAppLogLine','UserAppLogGroup','FlushRequest','SetStatusRequest','LogOffset','LogLine','RequestLog','LogModuleVersion','LogReadRequest','LogReadResponse','LogUsageRecord','LogUsageRequest','LogUsageResponse','LogService']

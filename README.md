@@ -1,3 +1,10 @@
+Speedplane Fork
+===================================================
+This forked version of the Google Compat runtime (which is no longer maintained by Google) has updated SDK libraries. The main advantages of using this fork are:
+
+- **Split Health Checks**: `liveness_check` and `readiness_check` did not work on the currently available version.
+- **Updated GCL Libraries**: The `requirements.txt` libraries have been updated to modern versions.
+
 DEPRECATED: Google App Engine Flexible Environment Python Compat Runtime
 ===================================================
 

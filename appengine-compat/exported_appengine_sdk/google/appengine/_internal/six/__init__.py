@@ -1,6 +1,4 @@
-"""Utilities for writing code that runs on Python 2 and 3"""
-
-# Copyright (c) 2010-2015 Benjamin Peterson
+# Copyright (c) 2010-2018 Benjamin Peterson
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+"""Utilities for writing code that runs on Python 2 and 3"""
+
 from __future__ import absolute_import
 
 import functools
@@ -29,7 +29,7 @@ import sys
 import types
 
 
-__version__ = "1.10.0"
+__version__ = "1.12.0"
 
 
 # Useful for very coarse version differentiation.
@@ -241,6 +241,7 @@ _moved_attributes = [
     MovedAttribute("map", "itertools", "builtins", "imap", "map"),
     MovedAttribute("getcwd", "os", "os", "getcwdu", "getcwd"),
     MovedAttribute("getcwdb", "os", "os", "getcwd", "getcwdb"),
+    MovedAttribute("getoutput", "commands", "subprocess"),
     MovedAttribute("range", "__builtin__", "builtins", "xrange", "range"),
     MovedAttribute("reload_module", "__builtin__", "importlib" if PY34 else "imp", "reload"),
     MovedAttribute("reduce", "__builtin__", "functools"),
@@ -262,10 +263,11 @@ _moved_attributes = [
     MovedModule("html_entities", "htmlentitydefs", "html.entities"),
     MovedModule("html_parser", "HTMLParser", "html.parser"),
     MovedModule("http_client", "httplib", "http.client"),
+    MovedModule("email_mime_base", "email.MIMEBase", "email.mime.base"),
+    MovedModule("email_mime_image", "email.MIMEImage", "email.mime.image"),
     MovedModule("email_mime_multipart", "email.MIMEMultipart", "email.mime.multipart"),
     MovedModule("email_mime_nonmultipart", "email.MIMENonMultipart", "email.mime.nonmultipart"),
     MovedModule("email_mime_text", "email.MIMEText", "email.mime.text"),
-    MovedModule("email_mime_base", "email.MIMEBase", "email.mime.base"),
     MovedModule("BaseHTTPServer", "BaseHTTPServer", "http.server"),
     MovedModule("CGIHTTPServer", "CGIHTTPServer", "http.server"),
     MovedModule("SimpleHTTPServer", "SimpleHTTPServer", "http.server"),
@@ -337,10 +339,12 @@ _urllib_parse_moved_attributes = [
     MovedAttribute("quote_plus", "urllib", "urllib.parse"),
     MovedAttribute("unquote", "urllib", "urllib.parse"),
     MovedAttribute("unquote_plus", "urllib", "urllib.parse"),
+    MovedAttribute("unquote_to_bytes", "urllib", "urllib.parse", "unquote", "unquote_to_bytes"),
     MovedAttribute("urlencode", "urllib", "urllib.parse"),
     MovedAttribute("splitquery", "urllib", "urllib.parse"),
     MovedAttribute("splittag", "urllib", "urllib.parse"),
     MovedAttribute("splituser", "urllib", "urllib.parse"),
+    MovedAttribute("splitvalue", "urllib", "urllib.parse"),
     MovedAttribute("uses_fragment", "urlparse", "urllib.parse"),
     MovedAttribute("uses_netloc", "urlparse", "urllib.parse"),
     MovedAttribute("uses_params", "urlparse", "urllib.parse"),
@@ -416,6 +420,8 @@ _urllib_request_moved_attributes = [
     MovedAttribute("URLopener", "urllib", "urllib.request"),
     MovedAttribute("FancyURLopener", "urllib", "urllib.request"),
     MovedAttribute("proxy_bypass", "urllib", "urllib.request"),
+    MovedAttribute("parse_http_list", "urllib2", "urllib.request"),
+    MovedAttribute("parse_keqv_list", "urllib2", "urllib.request"),
 ]
 for attr in _urllib_request_moved_attributes:
     setattr(Module_six_moves_urllib_request, attr.name, attr)
@@ -679,11 +685,15 @@ if PY3:
     exec_ = getattr(moves.builtins, "exec")
 
     def reraise(tp, value, tb=None):
-        if value is None:
-            value = tp()
-        if value.__traceback__ is not tb:
-            raise value.with_traceback(tb)
-        raise value
+        try:
+            if value is None:
+                value = tp()
+            if value.__traceback__ is not tb:
+                raise value.with_traceback(tb)
+            raise value
+        finally:
+            value = None
+            tb = None
 
 else:
     def exec_(_code_, _globs_=None, _locs_=None):
@@ -699,19 +709,28 @@ else:
         exec("""exec _code_ in _globs_, _locs_""")
 
     exec_("""def reraise(tp, value, tb=None):
-    raise tp, value, tb
+    try:
+        raise tp, value, tb
+    finally:
+        tb = None
 """)
 
 
 if sys.version_info[:2] == (3, 2):
     exec_("""def raise_from(value, from_value):
-    if from_value is None:
-        raise value
-    raise value from from_value
+    try:
+        if from_value is None:
+            raise value
+        raise value from from_value
+    finally:
+        value = None
 """)
 elif sys.version_info[:2] > (3, 2):
     exec_("""def raise_from(value, from_value):
-    raise value from from_value
+    try:
+        raise value from from_value
+    finally:
+        value = None
 """)
 else:
     def raise_from(value, from_value):
@@ -799,19 +818,35 @@ else:
 
 def with_metaclass(meta, *bases):
     """Create a base class with a metaclass."""
+    # No need for a dummy metaclass if `meta` is already present in
+    # the inheritance hierarchy. See also a note in `add_metaclass`.
+    if any(isinstance(cls, meta) for cls in bases):
+        return type('temporary_class', bases, {})
+
     # This requires a bit of explanation: the basic idea is to make a dummy
     # metaclass for one level of class instantiation that replaces itself with
     # the actual metaclass.
-    class metaclass(meta):
+    class metaclass(type):
 
         def __new__(cls, name, this_bases, d):
             return meta(name, bases, d)
+
+        @classmethod
+        def __prepare__(cls, name, this_bases):
+            return meta.__prepare__(name, bases)
     return type.__new__(metaclass, 'temporary_class', (), {})
 
 
 def add_metaclass(metaclass):
     """Class decorator for creating a class with a metaclass."""
     def wrapper(cls):
+        if isinstance(cls, metaclass):
+            # Avoid recreating the class if `metaclass` has been inherited
+            # from one of the bases. Note, that this behavior matches
+            # that of Python 3.X where the "appropriate metaclass" is
+            # determined prior to constructing a class.
+            return cls
+
         orig_vars = cls.__dict__.copy()
         slots = orig_vars.get('__slots__')
         if slots is not None:
@@ -821,8 +856,69 @@ def add_metaclass(metaclass):
                 orig_vars.pop(slots_var)
         orig_vars.pop('__dict__', None)
         orig_vars.pop('__weakref__', None)
+        if hasattr(cls, '__qualname__'):
+            orig_vars['__qualname__'] = cls.__qualname__
         return metaclass(cls.__name__, cls.__bases__, orig_vars)
     return wrapper
+
+
+def ensure_binary(s, encoding='utf-8', errors='strict'):
+    """Coerce **s** to six.binary_type.
+
+    For Python 2:
+      - `unicode` -> encoded to `str`
+      - `str` -> `str`
+
+    For Python 3:
+      - `str` -> encoded to `bytes`
+      - `bytes` -> `bytes`
+    """
+    if isinstance(s, text_type):
+        return s.encode(encoding, errors)
+    elif isinstance(s, binary_type):
+        return s
+    else:
+        raise TypeError("not expecting type '%s'" % type(s))
+
+
+def ensure_str(s, encoding='utf-8', errors='strict'):
+    """Coerce *s* to `str`.
+
+    For Python 2:
+      - `unicode` -> encoded to `str`
+      - `str` -> `str`
+
+    For Python 3:
+      - `str` -> `str`
+      - `bytes` -> decoded to `str`
+    """
+    if not isinstance(s, (text_type, binary_type)):
+        raise TypeError("not expecting type '%s'" % type(s))
+    if PY2 and isinstance(s, text_type):
+        s = s.encode(encoding, errors)
+    elif PY3 and isinstance(s, binary_type):
+        s = s.decode(encoding, errors)
+    return s
+
+
+def ensure_text(s, encoding='utf-8', errors='strict'):
+    """Coerce *s* to six.text_type.
+
+    For Python 2:
+      - `unicode` -> `unicode`
+      - `str` -> `unicode`
+
+    For Python 3:
+      - `str` -> `str`
+      - `bytes` -> decoded to `str`
+    """
+    if isinstance(s, binary_type):
+        return s.decode(encoding, errors)
+    elif isinstance(s, text_type):
+        return s
+    else:
+        raise TypeError("not expecting type '%s'" % type(s))
+
 
 
 def python_2_unicode_compatible(klass):
@@ -842,21 +938,6 @@ def python_2_unicode_compatible(klass):
         klass.__str__ = lambda self: self.__unicode__().encode('utf-8')
     return klass
 
-
-# MOE:begin_strip
-#######################################################################
-## Google modification
-##
-## We explicitly import the test file here, before the package
-## manipulation below, so that we can see it in tests. This does make
-## the test module visible to six users, but that seems fairly
-## harmless.
-try:
-  import google.third_party.py.six.test_six
-except ImportError:
-  pass
-#######################################################################
-# MOE:end_strip
 
 # Complete the moves implementation.
 # This code is at the end of this module to speed up module loading.

@@ -178,7 +178,8 @@ TIMESTAMP_FIELD_NAME = '_timestamp'
 
 
 
-_LANGUAGE_RE = re.compile('^(.{2}|.{2}_.{2})$')
+
+_LANGUAGE_RE = re.compile('^(.{2,3}|.{2}_.{2})$')
 
 _MAXIMUM_STRING_LENGTH = 500
 _MAXIMUM_CURSOR_LENGTH = 10000
@@ -2874,7 +2875,7 @@ def _CheckFacetDiscoveryLimit(facet_limit):
     return None
   else:
     return _CheckInteger(
-        facet_limit, 'discover_facet_limit',
+        facet_limit, 'discovery_limit',
         upper_bound=MAXIMUM_FACETS_TO_RETURN)
 
 
@@ -2933,8 +2934,8 @@ class FacetOptions(object):
     If you wish to discovering 5 facets with 10 values each in 6000 search
     results, you can use a FacetOption object like this:
 
-    facet_option = FacetOptions(discover_facet_limit=5,
-                                discover_facet_value_limit=10,
+    facet_option = FacetOptions(discovery_limit=5,
+                                discovery_value_limit=10,
                                 depth=6000)
 
     Args:
@@ -3701,24 +3702,17 @@ class Index(object):
         'DeleteDocument', request, response, deadline, hook)
 
   def delete_schema(self):
-    """Deprecated in 1.7.4. Delete the schema from the index.
+    """Delete the schema from the index.
 
-    We are deprecating this method and replacing with more general schema
-    and index managment.
-
-    A possible use may be remove typed fields which are no longer used. After
-    you delete the schema, you need to index one or more documents to rebuild
-    the schema. Until you re-index some documents, searches may fail, especially
-    searches using field restricts.
+    To fully delete an index, you must delete both the index's documents
+    and schema. This method deletes the index's schema, which
+    contains field names and field types of previously indexed documents.
 
     Raises:
       DeleteError: If the schema failed to be deleted.
+    Returns:
+      None
     """
-
-
-
-    warnings.warn('delete_schema is deprecated in 1.7.4.',
-                  DeprecationWarning, stacklevel=2)
     request = search_service_pb.DeleteSchemaRequest()
     response = search_service_pb.DeleteSchemaResponse()
     params = request.mutable_params()

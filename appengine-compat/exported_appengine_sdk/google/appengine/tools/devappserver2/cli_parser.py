@@ -62,6 +62,25 @@ class PortParser(object):
     return port
 
 
+class ServicePortParser(PortParser):
+  """An argparse type parser exclusively for --specified_service_port flag."""
+
+  def __init__(self):
+    super(ServicePortParser, self).__init__()
+
+  def __call__(self, value):
+    res = {}
+    for service_port_str in value.split(','):
+      service_port = service_port_str.split(':')
+      if len(service_port) != 2:
+        raise argparse.ArgumentTypeError(
+            ' %s is not in the format of service-name:port,service-name:port'
+            % value)
+      service, port = service_port
+      res[service] = super(ServicePortParser, self).__call__(port)
+    return res
+
+
 def parse_per_module_option(
     value, value_type, value_predicate,
     single_bad_type_error, single_bad_predicate_error,
@@ -251,7 +270,7 @@ class ConfigurableArgumentParser(argparse.ArgumentParser):
       *args: Arguments passed on to the argument group.
       **kwargs: Keyword arguments passed on to the argument group, can
           optionally contain a 'restrict_configuration' kwarg that will be
-          popped. This should be the list of configurations the the argument is
+          popped. This should be the list of configurations the argument is
           applicable for. Omitting this kwarg, or providing an empty list,
           signifies that the added argument is valid for all configurations.
     """
@@ -305,7 +324,7 @@ class ConfigurableArgumentGroup(argparse._ArgumentGroup):  # pylint: disable=pro
       *args: Arguments passed on to the argument group.
       **kwargs: Keyword arguments passed on to the argument group, can
           optionally contain a 'restrict_configuration' kwarg that will be
-          popped. This should be the list of configurations the the argument is
+          popped. This should be the list of configurations the argument is
           applicable for. Omitting this kwarg, or providing an empty list,
           signifies that the added argument is valid for all configurations.
     """
@@ -355,12 +374,23 @@ def create_command_line_parser(configuration=None):
       '-A', '--application', action='store', dest='app_id',
       help='Set the application, overriding the application value from the '
       'app.yaml file.')
+  # The default application ID prefix for use in API stubs. This flag is
+  # suppressed because users should not be changing this. It is used only for
+  # testing purposes.
+  # TODO: Unify py/java use of dev~ prefix.
+  common_group.add_argument(
+      '--application_prefix', dest='app_id_prefix', default='dev~',
+      help=argparse.SUPPRESS)
   common_group.add_argument(
       '--host', default=default_server_host,
       help='host name to which application modules should bind')
   common_group.add_argument(
       '--port', type=PortParser(), default=8080,
       help='lowest port to which application modules should bind')
+  common_group.add_argument(
+      '--specified_service_ports', type=ServicePortParser(), default=None,
+      help='A sequence of service-name:port-number to port number mapping. E.g:'
+      ' service-a:22222,service-b:33333')
   common_group.add_argument(
       '--admin_host', default=default_server_host,
       help='host name to which the admin server should bind')
@@ -415,6 +445,45 @@ def create_command_line_parser(configuration=None):
                             const=True,
                             default=False,
                             help=argparse.SUPPRESS)
+  enable_host_checking_help = ('determines whether to enforce HTTP Host '
+                               'checking for application modules, API server, '
+                               'and admin server. host checking protects '
+                               'against DNS rebinding attacks, so only disable '
+                               'after understanding the security implications.')
+
+
+
+
+
+  common_group.add_argument('--enable_host_checking',
+                            action=boolean_action.BooleanAction,
+                            const=True,
+                            default=True,
+                            help=enable_host_checking_help)
+  common_group.add_argument('--enable_console',
+                            action=boolean_action.BooleanAction,
+                            const=True,
+                            default=False,
+                            help='Enable interactive console in admin view.')
+  common_group.add_argument(
+      '--java_app_base_url',
+      default=None,
+      restrict_configuration=[API_SERVER_CONFIGURATION],
+      help='Base URL of the java app in the form '
+      'http://host[:port], e.g. http://localhost:8080. '
+      'Should only be used to specify the url of a java '
+      'app running with the classic Java SDK tooling, '
+      'and not Java apps running on devappserver2.')
+  common_group.add_argument(
+      '--ssl_certificate_path',
+      default=None,
+      help='Path to SSL certificate. Must also provide '
+      '--ssl_certificate_key_path if using this option.')
+  common_group.add_argument(
+      '--ssl_certificate_key_path',
+      default=None,
+      help='Path to corresponding SSL private key. Must also provide '
+      '--ssl_certificate_path if using this option.')
 
   # PHP
   php_group = parser.add_argument_group('PHP')
@@ -436,17 +505,6 @@ def create_command_line_parser(configuration=None):
                          type=parse_path,
                          restrict_configuration=[DEV_APPSERVER_CONFIGURATION],
                          help='path to the xdebug extension')
-
-
-
-
-
-
-
-
-
-
-
 
   # App Identity
   appidentity_group = parser.add_argument_group('Application Identity')
@@ -473,7 +531,7 @@ def create_command_line_parser(configuration=None):
       '--python_startup_script',
       restrict_configuration=[DEV_APPSERVER_CONFIGURATION],
       help='the script to run at the startup of new Python runtime instances '
-      '(useful for tools such as debuggers.')
+      '(useful for tools such as debuggers).')
   python_group.add_argument(
       '--python_startup_args',
       restrict_configuration=[DEV_APPSERVER_CONFIGURATION],
@@ -506,6 +564,13 @@ def create_command_line_parser(configuration=None):
       help='Enable watching $GOPATH for go app dependency changes. If file '
       'watcher complains about too many files to watch, you can set it to '
       'False.')
+  go_group.add_argument(
+      '--go_debugging',
+      restrict_configuration=[DEV_APPSERVER_CONFIGURATION],
+      action=boolean_action.BooleanAction,
+      const=True,
+      default=False,
+      help='Enable debugging. Connect to the running app with delve.')
 
   # Custom
   custom_group = parser.add_argument_group('Custom VM Runtime')
@@ -611,6 +676,41 @@ def create_command_line_parser(configuration=None):
       'release. Please do not rely on sequential IDs in your '
       'tests.')
 
+
+
+
+  datastore_group.add_argument(
+      '--support_datastore_emulator',
+      action=boolean_action.BooleanAction,
+      const=True,
+      default=None,
+      help='Support datastore local emulation with Cloud Datastore emulator.')
+  # Port number on which dev_appserver should launch Cloud Datastore emulator.
+  datastore_group.add_argument(
+      '--running_datastore_emulator_host', default=None,
+      help='Overrides the environment variable DATASTORE_EMULATOR_HOST, which'
+      ' means the hostname:port of a running Cloud Datastore emulator that'
+      ' dev_appserver can connect to.')
+  # Port number on which dev_appserver should launch Cloud Datastore emulator.
+  datastore_group.add_argument(
+      '--datastore_emulator_port', type=PortParser(), default=0,
+      help='The port number that dev_appserver should launch Cloud Datastore '
+      'emulator on.')
+  # The path to an executable shell script that invokes Cloud Datastore
+  # emulator.
+  datastore_group.add_argument(
+      '--datastore_emulator_cmd', type=parse_path,
+      default=None,
+      help='The path to a script that invokes cloud datastore emulator. If '
+      'left empty, dev_appserver will try to find datastore emulator in the '
+      'Google Cloud SDK.')
+  datastore_group.add_argument(
+      '--datastore_emulator_is_test_mode',
+      action=boolean_action.BooleanAction,
+      const=True,
+      default=False,
+      help=argparse.SUPPRESS)
+
   # Logs
   logs_group = parser.add_argument_group('Logs API')
   logs_group.add_argument(
@@ -701,20 +801,19 @@ def create_command_line_parser(configuration=None):
   # host name to which the server for API calls should bind.
   misc_group.add_argument(
       '--api_host', default=default_server_host,
-      help=argparse.SUPPRESS)
+      help='host name to which the api server should bind.')
   misc_group.add_argument(
       '--api_port', type=PortParser(), default=0,
       help='port to which the server for API calls should bind')
   misc_group.add_argument(
-      '--grpc_api', action='append', dest='grpc_apis',
-      restrict_configuration=[DEV_APPSERVER_CONFIGURATION],
-      help='apis that talk grpc to api_server. For example: '
-      '--grpc_api memcache --grpc_api datastore. Setting --grpc_api all '
-      'lets every api talk grpc.')
+      '--api_server_supports_grpc',
+      action=boolean_action.BooleanAction,
+      const=True,
+      default=False,
+      help=argparse.SUPPRESS)
   misc_group.add_argument(
       '--grpc_api_port', type=PortParser(), default=0,
-      restrict_configuration=[DEV_APPSERVER_CONFIGURATION],
-      help='port to which the server for grpc API calls should bind')
+      help='port on which the gRPC API server listens.')
   misc_group.add_argument(
       '--automatic_restart',
       action=boolean_action.BooleanAction,
@@ -750,19 +849,21 @@ def create_command_line_parser(configuration=None):
       'variables. For example: --env_var KEY_1=val1 --env_var KEY_2=val2. '
       'You can also define environment variables in app.yaml.')
   misc_group.add_argument(
+      '--check_java_for_cloud_datastore_emulator',
+      action=boolean_action.BooleanAction,
+      const=True,
+      default=True,
+      help=argparse.SUPPRESS)
+  # The client id used for Google Analytics usage reporting. If this is set,
+  # usage metrics will be sent to Google Analytics. This should only be set by
+  # the Cloud SDK dev_appserver.py wrapper.
+  misc_group.add_argument(
       '--google_analytics_client_id', default=None,
-      restrict_configuration=[DEV_APPSERVER_CONFIGURATION],
-      help='the client id user for Google Analytics usage reporting. If this '
-      'is set, usage metrics will be sent to Google Analytics.')
+      help=argparse.SUPPRESS)
+  # The user agent to use for Google Analytics usage reporting. This should only
+  # be set by the Cloud SDK dev_appserver.py wrapper.
   misc_group.add_argument(
       '--google_analytics_user_agent', default=None,
-      restrict_configuration=[DEV_APPSERVER_CONFIGURATION],
-      help='the user agent to use for Google Analytics usage reporting.')
-
-
-
-
-
-
+      help=argparse.SUPPRESS)
 
   return parser
